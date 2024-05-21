@@ -49,7 +49,7 @@ def upload_and_notify():
         print("Erreur lors de l'upload de la vidéo")
 
 def notify_discord(video_url):
-    discord_webhook_url = "https://discord.com/api/webhooks/1242472660013813880/c1f5qb5joOtRlBjqxMhRQe9k9X5Q_0YHU0rA3FUbl_mgtlnV9Cz3i50-uqKbwJHGeYKZ"  # Remplacez par votre URL de webhook
+    discord_webhook_url = "https://discord.com/api/webhooks/1242472660013813880/c1f5qb5joOtRlBjqxMhRQe9k9X5Q_0YHU0rA3FUbl_mgtlnV9Cz3i50-uqKbwJHGeYKZ"  
     message = {
         "content": f"Nouvelle vidéo Lightboard disponible : {video_url}",
         "username": "Lightboard TC"
