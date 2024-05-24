@@ -4,6 +4,7 @@ Created on Tue May 21 13:56:52 2024
 
 @author: CAMBRAY-LAGASSY E
 """
+#PIP INSTALL DISCORD
 import discord
 import asyncio
 import nest_asyncio
