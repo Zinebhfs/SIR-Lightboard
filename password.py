@@ -7,6 +7,7 @@ Created on Tue Fri 24 9:0:51 2024
 import random
 import string
 from tkinter import *
+import time
 
 def getPassword():
     #Définir les caractères à utiliser pour la génération
@@ -17,22 +18,31 @@ def getPassword():
 def close_window():
     #Destruction de la fenêtre
     fen.destroy()
-
-def showPassword(password):
+    
+def showStatus(title, status, color):
     #Titre de la fenêtre
-    fen.title("Mot de passe pour accéder à la vidéo")
+    fen.title(title)
     #Dimensionnement de la fenêtre
     fen.geometry("800x150")
-    #Disposition, du mot de passe, dans le bon format
-    myPassword=StringVar()
-    myPassword.set(password)
-    #Interaction avec la fenêtre
-    texteLabel = Label(fen, textvariable = myPassword, font=("Cambria", 80))
+    myMsg=StringVar()
+    myMsg.set(status)
+    texteLabel = Label(fen, textvariable = myMsg, font=("Cambria", 80), fg=color)
     texteLabel.pack()
-    fen.after(30000, close_window)
-    fen.mainloop()
+    fen.after(5000, close_window)
     
+    #Placement de la fenêtre en bas à droite
+    screen_width = fen.winfo_screenwidth()
+    screen_height = fen.winfo_screenheight()
+    x_position = screen_width - 1000
+    y_position = screen_height - 200
+    fen.geometry(f"{1000}x{200}+{x_position}+{y_position}")
 
-fen=Tk()
+    fen.mainloop()
+
 password = getPassword()
-showPassword(password)
+fen=Tk()
+showStatus("L'enregistrement est en cours !", "EN COURS", "green")
+fen=Tk()
+showStatus("L'enregistrement est terminé !", "TERMINÉ", "red")
+fen=Tk()
+showStatus("Mot de passe pour accéder à la vidéo !", password, "black")
