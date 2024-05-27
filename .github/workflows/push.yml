@@ -10,11 +10,11 @@ jobs:
       - run: |
             set -e
             echo "dont look at this, go take a coffee, this will take a while"
-            apt update
-            apt install live-build --yes
+            sudo apt update
+            sudo apt install live-build --yes
             cd live-cd
             chmod +x lbconfig
-            ./lbconfig
+            sudo bash lbconfig
       - name: Upload Build Image
         uses: actions/upload-artifact@v3
         with:
