@@ -13,9 +13,9 @@ cp monscript.sh config/includes.chroot_after_packages/etc/skel/
 chmod +777 config/includes.chroot_after_packages/etc/skel/monscript.sh
 
 mkdir -p config/includes.chroot_after_packages/etc/skel/config/obs-studio
-cp obs-studio-config/config config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
+cp obs-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
 chmod +777 config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
-cp obs-studio-config/config config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
+cp obs-global-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
 chmod +777 config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
 
 echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
