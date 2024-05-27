@@ -13,6 +13,7 @@ jobs:
             apt update
             apt install live-build --yes
             cd live-cd
+            chmod +x lbconfig
             ./lbconfig
       - name: Upload Build Image
         uses: actions/upload-artifact@v3
