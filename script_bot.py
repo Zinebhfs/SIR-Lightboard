@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue May 21 13:56:52 2024
-
-@author: CAMBRAY-LAGASSY E
-"""
 
 import discord
 import os
