@@ -85,6 +85,7 @@ def on_press(event):
         keyboard.unhook_all()
         client_obs.disconnect()
         gui_queue.put(("quit",))
+        exit()
 
 # Tkinter pop-up to show status
 def create_status_window():
@@ -145,4 +146,3 @@ keyboard_thread.start()
 
 root.after(100, process_gui_queue)
 root.mainloop()
-1
