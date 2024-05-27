@@ -1,0 +1,38 @@
+```bash 
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          monscript
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Exemple de script de démarrage
+# Description:       Ce script exécute une tâche au démarrage
+### END INIT INFO
+
+case "$1" in
+    start)
+        echo "Démarrage de monscript"
+        # Commandes à exécuter au démarrage
+        ;;
+    stop)
+        echo "Arrêt de monscript"
+        # Commandes à exécuter à l'arrêt
+        ;;
+    restart)
+        echo "Redémarrage de monscript"
+        $0 stop
+        $0 start
+        ;;
+    status)
+        echo "Statut de monscript"
+        # Commande pour vérifier le statut
+        ;;
+    *)
+        echo "Usage: /etc/init.d/monscript {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0
+```
