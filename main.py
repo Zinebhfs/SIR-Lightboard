@@ -6,7 +6,7 @@ import discord
 import asyncio
 from typing import Optional, Tuple
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build, Resource
 from googleapiclient.http import MediaFileUpload
 from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
@@ -15,139 +15,168 @@ import nest_asyncio
 import threading
 import queue
 from keyboard import KeyboardEvent
-from googleapiclient.discovery import Resource
 
 nest_asyncio.apply()
 
 # Load environment variables
 load_dotenv()
 
-OBS_HOST: str = os.getenv("OBS_HOST", "localhost")
-OBS_PORT: int = int(os.getenv("OBS_PORT", 4455))
-OBS_VIDEO_PATH: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
-YOUTUBE_CLIENT_SECRETS_FILE: str = os.getenv("CLIENT_SECRETS_FILE", 'client_secret.json')
-YOUTUBE_TOKEN_FILE: str = os.getenv("TOKEN_FILE", 'token.pkl')
-DISCORD_CHANNEL_ID: int = int(os.getenv("DISCORD_CHANNEL_ID", "1242449552850681958"))
-DISCORD_BOT_TOKEN: str = os.getenv("DISCORD_BOT_TOKEN", "")
 
-SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
+class OBSRecorder:
+    def __init__(self):
+        self.host: str = os.getenv("OBS_HOST", "localhost")
+        self.port: int = int(os.getenv("OBS_PORT", 4455))
+        self.video_path: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
+        self.client = obsws(self.host, self.port)
+        self.client.connect()
+
+    def start_recording(self) -> None:
+        self.client.call(obs_requests.StartRecord())
+
+    def stop_recording(self) -> None:
+        self.client.call(obs_requests.StopRecord())
+
+    def disconnect(self) -> None:
+        self.client.disconnect()
+
+    def find_latest_video(self) -> Optional[str]:
+        video_files = glob.glob(os.path.join(self.video_path, '*.mkv'))
+        if not video_files:
+            return None
+        return max(video_files, key=os.path.getmtime)
 
 
-def find_latest_video(directory_path: str) -> Optional[str]:
-    video_files = glob.glob(os.path.join(directory_path, '*.mkv'))
-    if not video_files:
-        return None
-    return max(video_files, key=os.path.getmtime)
+class YouTubeUploader:
+    SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 
-client_obs = obsws(OBS_HOST, OBS_PORT)
-client_obs.connect()
+    def __init__(self):
+        self.client_secrets_file: str = os.getenv("CLIENT_SECRETS_FILE", 'client_secret.json')
+        self.token_file: str = os.getenv("TOKEN_FILE", 'token.pkl')
+        self.credentials = self.get_credentials()
+        self.youtube: Resource = build('youtube', 'v3', credentials=self.credentials)
 
-# YouTube OAuth2 setup
-try:
-    with open(YOUTUBE_TOKEN_FILE, 'rb') as token:
-        credentials = pickle.load(token)
-except FileNotFoundError:
-    flow = InstalledAppFlow.from_client_secrets_file(YOUTUBE_CLIENT_SECRETS_FILE, SCOPES)
-    credentials = flow.run_local_server(port=0)
-    with open(YOUTUBE_TOKEN_FILE, 'wb') as token:
-        pickle.dump(credentials, token)
-youtube: Resource = build('youtube', 'v3', credentials=credentials)
-print(type(youtube))
+    def get_credentials(self):
+        try:
+            with open(self.token_file, 'rb') as token:
+                return pickle.load(token)
+        except FileNotFoundError:
+            flow = InstalledAppFlow.from_client_secrets_file(self.client_secrets_file, self.SCOPES)
+            credentials = flow.run_local_server(port=0)
+            with open(self.token_file, 'wb') as token:
+                pickle.dump(credentials, token)
+            return credentials
 
-def start_recording() -> None:
-    client_obs.call(obs_requests.StartRecord())
-    gui_queue.put(("update_status", "Recording started!", "IN PROGRESS", "green"))
+    def upload_video(self, video_file: str) -> str:
+        body = {
+            'snippet': {'title': 'Video TC INSA Lyon', 'description': '', 'tags': ['tag1', 'tag2']},
+            'status': {'privacyStatus': 'unlisted'}
+        }
+        media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
+        response = self.youtube.videos().insert(part='snippet,status', body=body, media_body=media).execute()
+        video_id = response['id']
+        return f'https://www.youtube.com/watch?v={video_id}'
 
-def stop_recording() -> None:
-    client_obs.call(obs_requests.StopRecord())
-    gui_queue.put(("update_status", "Recording stopped!", "COMPLETED", "red"))
-    gui_queue.put(("upload_video",))
 
-def upload_video() -> None:
-    video_file: Optional[str] = find_latest_video(OBS_VIDEO_PATH)
-    if not video_file:
-        return
-    body = {
-        'snippet': {'title': 'Video TC INSA Lyon', 'description': '', 'tags': ['tag1', 'tag2']},
-        'status': {'privacyStatus': 'unlisted'}
-    }
-    media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
-    response = youtube.videos().insert(part='snippet,status', body=body, media_body=media).execute()
-    video_id = response['id']
-    video_url = f'https://www.youtube.com/watch?v={video_id}'
-    print("Video URL:", video_url)
-    send_discord_message(video_url)
+class DiscordNotifier:
+    def __init__(self):
+        self.channel_id: int = int(os.getenv("DISCORD_CHANNEL_ID", "1242449552850681958"))
+        self.bot_token: str = os.getenv("DISCORD_BOT_TOKEN", "")
 
-def on_press(event: KeyboardEvent) -> None:
-    if event.name == '1':
-        print("Record key pressed: starting recording")
-        start_recording()
-    elif event.name == '2':
-        print("Stop key pressed: stopping recording")
-        stop_recording()
-    elif event.name == '3':
-        print("Quit key pressed")
-        keyboard.unhook_all()
-        client_obs.disconnect()
-        gui_queue.put(("quit",))
-        exit()
+    async def send_message(self, message: str) -> None:
+        intents = discord.Intents.default()
+        client = discord.Client(intents=intents)
 
-# Tkinter pop-up to show status
-def create_status_window() -> Tuple[Tk, Label]:
-    root = Tk()
-    root.title("Status")
-    root.geometry("800x150")
-    root.attributes('-topmost', True)
-    root.geometry(f"{1000}x{200}+{root.winfo_screenwidth() - 1000}+{root.winfo_screenheight() - 200}")
-    label = Label(root, text="", font=("Cambria", 80))
-    label.pack()
-    return root, label
+        @client.event
+        async def on_ready() -> None:
+            channel = client.get_channel(self.channel_id)
+            if channel:
+                await channel.send(message)
+            else:
+                print("The channel ID is incorrect, right-click the channel to get the ID")
+            await client.close()
 
-def update_status(message: str, status: str, color: str) -> None:
-    label.config(text=message, fg=color)
-    root.update()
+        await client.start(self.bot_token)
 
-def process_gui_queue() -> None:
-    while not gui_queue.empty():
-        task = gui_queue.get()
-        if task[0] == "update_status":
-            update_status(task[1], task[2], task[3])
-        elif task[0] == "upload_video":
-            pass
-            # upload_video()
-        elif task[0] == "quit":
-            root.quit()
-    root.after(100, process_gui_queue)
+    def send_discord_message(self, url: str) -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        message = f"Here is the URL of the latest video that has been published: \n{url}"
+        loop.run_until_complete(self.send_message(message))
 
-root, label = create_status_window()
 
-# Discord bot function
-async def send_message_to_channel(channel_id: int, message: str) -> None:
-    intents = discord.Intents.default()
-    client = discord.Client(intents=intents)
+class RecordingApp:
+    def __init__(self):
+        self.obs_recorder = OBSRecorder()
+        self.youtube_uploader = YouTubeUploader()
+        self.discord_notifier = DiscordNotifier()
+        self.gui_queue: queue.Queue = queue.Queue()
+        self.root, self.label = self.create_status_window()
 
-    @client.event
-    async def on_ready() -> None:
-        channel = client.get_channel(channel_id)
-        if channel:
-            await channel.send(message)
-        else:
-            print("The channel ID is incorrect, right-click the channel to get the ID")
-        await client.close()
+    def create_status_window(self) -> Tuple[Tk, Label]:
+        root = Tk()
+        root.title("Status")
+        root.geometry("800x150")
+        root.attributes('-topmost', True)
+        root.geometry(f"{1000}x{200}+{root.winfo_screenwidth() - 1000}+{root.winfo_screenheight() - 200}")
+        label = Label(root, text="", font=("Cambria", 80))
+        label.pack()
+        return root, label
 
-    await client.start(DISCORD_BOT_TOKEN)
+    def update_status(self, message: str, status: str, color: str) -> None:
+        self.label.config(text=message, fg=color)
+        self.root.update()
 
-def send_discord_message(url: str) -> None:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    message = f"Here is the URL of the latest video that has been published: \n{url}"
-    loop.run_until_complete(send_message_to_channel(DISCORD_CHANNEL_ID, message))
+    def process_gui_queue(self) -> None:
+        while not self.gui_queue.empty():
+            task = self.gui_queue.get()
+            if task[0] == "update_status":
+                self.update_status(task[1], task[2], task[3])
+            elif task[0] == "upload_video":
+                pass
+                # self.upload_video()
+            elif task[0] == "quit":
+                self.root.quit()
+        self.root.after(100, self.process_gui_queue)
 
-gui_queue: queue.Queue = queue.Queue()
+    def start_recording(self) -> None:
+        self.obs_recorder.start_recording()
+        self.gui_queue.put(("update_status", "Recording started!", "IN PROGRESS", "green"))
 
-keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(on_press))
-keyboard_thread.daemon = True
-keyboard_thread.start()
+    def stop_recording(self) -> None:
+        self.obs_recorder.stop_recording()
+        self.gui_queue.put(("update_status", "Recording stopped!", "COMPLETED", "red"))
+        self.gui_queue.put(("upload_video",))
 
-root.after(100, process_gui_queue)
-root.mainloop()
+    def upload_video(self) -> None:
+        video_file = self.obs_recorder.find_latest_video()
+        if not video_file:
+            return
+        video_url = self.youtube_uploader.upload_video(video_file)
+        print("Video URL:", video_url)
+        self.discord_notifier.send_discord_message(video_url)
+
+    def on_press(self, event: KeyboardEvent) -> None:
+        if event.name == '1':
+            print("Record key pressed: starting recording")
+            self.start_recording()
+        elif event.name == '2':
+            print("Stop key pressed: stopping recording")
+            self.stop_recording()
+        elif event.name == '3':
+            print("Quit key pressed")
+            keyboard.unhook_all()
+            self.obs_recorder.disconnect()
+            self.gui_queue.put(("quit",))
+            exit()
+
+    def run(self) -> None:
+        keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
+        keyboard_thread.daemon = True
+        keyboard_thread.start()
+        self.root.after(100, self.process_gui_queue)
+        self.root.mainloop()
+
+
+if __name__ == "__main__":
+    app = RecordingApp()
+    app.run()
