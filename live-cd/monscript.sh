@@ -1,6 +1,6 @@
 #! /bin/sh
 
-touch /home/user/Mabite
-echo "Ma bite de test" > /home/user/Mabite
-echo "Ma bite de test encore une fois" >> /home/user/Mabite
+touch /home/user/Test
+echo "Test" > /home/user/Tes
+echo "Test encore une fois" >> /home/user/Test
 
