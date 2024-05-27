@@ -1,0 +1,10 @@
+.*
+*
+!.gitignore
+!obs*
+!monscript.sh
+!lbconfig
+!crontab
+!README.md
+!syslinux/syslinux.cfg
+!syslinux_common/*
