@@ -51,11 +51,11 @@ youtube = build('youtube', 'v3', credentials=credentials)
 
 def start_recording():
     client_obs.call(obs_requests.StartRecord())
-    gui_queue.put(("update_status", "Recording started!", "EN COURS", "green"))
+    gui_queue.put(("update_status", "Recording started!", "IN PROGRESS", "green"))
 
 def stop_recording():
     client_obs.call(obs_requests.StopRecord())
-    gui_queue.put(("update_status", "Recording stopped!", "TERMINÉ", "red"))
+    gui_queue.put(("update_status", "Recording stopped!", "COMPLETED", "red"))
     gui_queue.put(("upload_video",))
 
 def upload_video():
@@ -63,25 +63,25 @@ def upload_video():
     if not video_file:
         return
     body = {
-        'snippet': {'title': 'Vidéo TC INSA Lyon', 'description': '', 'tags': ['tag1', 'tag2']},
+        'snippet': {'title': 'Video TC INSA Lyon', 'description': '', 'tags': ['tag1', 'tag2']},
         'status': {'privacyStatus': 'unlisted'}
     }
     media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
     response = youtube.videos().insert(part='snippet,status', body=body, media_body=media).execute()
     video_id = response['id']
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    print("Lien de la vidéo:", video_url)
+    print("Video URL:", video_url)
     send_discord_message(video_url)
 
 def on_press(event):
     if event.name == '1':
-        print("Touche 'record' pressée : démarrage de l'enregistrement")
+        print("Record key pressed: starting recording")
         start_recording()
     elif event.name == '2':
-        print("Touche 'stop' pressée : arrêt de l'enregistrement")
+        print("Stop key pressed: stopping recording")
         stop_recording()
     elif event.name == '3':
-        print("Touche pressée : quitter")
+        print("Quit key pressed")
         keyboard.unhook_all()
         client_obs.disconnect()
         gui_queue.put(("quit",))
@@ -127,7 +127,7 @@ async def send_message_to_channel(channel_id, message):
         if channel:
             await channel.send(message)
         else:
-            print("L'identifiant du canal est incorrect, faites un clique droit sur le canal concerné pour récupérer l'identifiant")
+            print("The channel ID is incorrect, right-click the channel to get the ID")
         await client.close()
 
     await client.start(BOT_TOKEN)
@@ -135,7 +135,7 @@ async def send_message_to_channel(channel_id, message):
 def send_discord_message(url):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    message = f"Voici l'URL de la dernière vidéo qui a été publiée : \n{url}"
+    message = f"Here is the URL of the latest video that has been published: \n{url}"
     loop.run_until_complete(send_message_to_channel(CHANNEL_ID, message))
 
 gui_queue = queue.Queue()
