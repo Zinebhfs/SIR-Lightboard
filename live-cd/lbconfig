@@ -1,17 +1,14 @@
 #! /bin/sh
 
-sudo su
 lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode debian --system live --distribution bookworm --archive-areas "main contrib non-free non-free-firmware" --binary-images iso-hybrid --bootloaders "syslinux"
 
-mkdir -p config/includes.chroot_after_packages/etc/init.d/
-cp monscript config/includes.chroot_after_packages/etc/init.d/
-sudo chmod +777 config/includes.chroot_after_packages/etc/init.d/monscript
+mkdir -p config/includes.chroot_after_packages/etc/
+cp crontab config/includes.chroot_after_packages/etc/
+chmod +777 config/includes.chroot_after_packages/etc/crontab
 
-cp link.sh config/hooks/live/
-sudo chmod +777 config/hooks/live/link.sh
-
-#mkdir -p config/includes.binary/boot/
-#cp syslinux config/includes.binary
+mkdir -p config/includes.chroot_after_packages/etc/skel/
+cp monscript.sh config/includes.chroot_after_packages/etc/skel/
+chmod +777 config/includes.chroot_after_packages/etc/skel/monscript.sh
 
 echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
 echo obs-studio >> config/package-lists/desktop.list.chroot
@@ -21,3 +18,4 @@ echo pip >> config/package-lists/desktop.list.chroot
 cp --recursive syslinux/ config/bootloaders
 cp --recursive syslinux_common/ config/bootloaders
 
+lb build
