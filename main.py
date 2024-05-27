@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build, Resource
 from googleapiclient.http import MediaFileUpload
+import googleapiclient.errors
 from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
@@ -15,7 +16,7 @@ import nest_asyncio
 import threading
 import queue
 from keyboard import KeyboardEvent
-
+import time
 nest_asyncio.apply()
 
 # Load environment variables
@@ -148,12 +149,27 @@ class RecordingApp:
         self.gui_queue.put(("upload_video",))
 
     def upload_video(self) -> None:
-        video_file = self.obs_recorder.find_latest_video()
-        if not video_file:
-            return
-        video_url = self.youtube_uploader.upload_video(video_file)
-        print("Video URL:", video_url)
-        self.discord_notifier.send_discord_message(video_url)
+        try:
+            video_file = self.obs_recorder.find_latest_video()
+            if not video_file:
+                return
+            video_url = self.youtube_uploader.upload_video(video_file)
+            print("Video URL:", video_url)
+            self.discord_notifier.send_discord_message(video_url)
+        except googleapiclient.errors.ResumableUploadError as e:
+            print("Google API quota exceeded. Unable to upload video.")
+            # Handle gracefully, display message, cleanup, etc.
+            self.update_status("Google quota exceeded", "ERROR", "red")
+            time.sleep(5)
+            self.obs_recorder.disconnect()
+            exit()
+        except Exception as e:
+            print("An unexpected error occurred:", e)
+            # Handle gracefully, display message, cleanup, etc.
+            self.update_status("An unexpected error occurred", "ERROR", "red")
+            time.sleep(5)
+            self.obs_recorder.disconnect()
+            exit()
 
     def on_press(self, event: KeyboardEvent) -> None:
         if event.name == '1':
