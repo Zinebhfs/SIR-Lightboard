@@ -4,27 +4,18 @@ on: push
 jobs:
   validate:
     runs-on: ubuntu-latest
-    steps:
-        
-      - name: Update APT sources
-        run: |
-          echo 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware' | sudo tee /etc/apt/sources.list
-          echo 'deb-src http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware' | sudo tee -a /etc/apt/sources.list
-          echo 'deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware' | sudo tee -a /etc/apt/sources.list
-          echo 'deb-src http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware' | sudo tee -a /etc/apt/sources.list
-          echo 'deb http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware' | sudo tee -a /etc/apt/sources.list
-          echo 'deb-src http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware' | sudo tee -a /etc/apt/sources.list
-  
+    steps: 
       - name: Check out repository
         uses: actions/checkout@v3
       - run: |
             set -e
             echo "dont look at this, go take a coffee, this will take a while"
             sudo apt update
+            sudo apt upgrade --yes
             sudo apt install live-build --yes
             cd live-cd
             chmod +x lbconfig
-            sudo bash lbconfig
+            sudo ./lbconfig
       - name: Upload Build Image
         uses: actions/upload-artifact@v3
         with:
