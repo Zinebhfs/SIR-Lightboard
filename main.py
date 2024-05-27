@@ -13,6 +13,7 @@ from tkinter import Tk, Label
 import nest_asyncio
 import threading
 import queue
+from keyboard import KeyboardEvent
 
 nest_asyncio.apply()
 
@@ -21,7 +22,6 @@ OBS_PORT = 4455
 CLIENT_SECRETS_FILE = 'client_secret.json'
 TOKEN_FILE = 'token.pkl'
 SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
-WEBHOOK_URL = 'https://discord.com/api/webhooks/1242472660013813880/c1f5qb5joOtRlBjqxMhRQe9k9X5Q_0YHU0rA3FUbl_mgtlnV9Cz3i50-uqKbwJHGeYKZ'
 VIDEO_FOLDER = r'C:\Users\alain\Videos'
 
 # Load environment variables
@@ -73,7 +73,7 @@ def upload_video():
     print("Video URL:", video_url)
     send_discord_message(video_url)
 
-def on_press(event):
+def on_press(event: KeyboardEvent):
     if event.name == '1':
         print("Record key pressed: starting recording")
         start_recording()
