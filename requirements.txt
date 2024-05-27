@@ -1,0 +1,4 @@
+python-dotenv==1.0.1
+discord==2.3.2
+discord.py==2.3.2
+nest-asyncio==1.6.0
