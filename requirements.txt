@@ -3,3 +3,6 @@ discord==2.3.2
 discord.py==2.3.2
 nest-asyncio==1.6.0
 tk==0.1.0
+google-api-python-client==2.130.0
+obs-websocket-py==1.0
+keyboard==0.13.5
