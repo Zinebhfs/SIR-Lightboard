@@ -2,7 +2,7 @@
 
 set -ex
 
-lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode debian --system live --distribution bookworm --archive-areas "main contrib non-free non-free-firmware" --binary-images iso-hybrid --bootloaders "syslinux"
+lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode "debian" --system "live" --distribution "bookworm" --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid" --bootloaders "syslinux"
 
 mkdir -p config/includes.chroot_after_packages/etc/
 cp crontab config/includes.chroot_after_packages/etc/
@@ -12,7 +12,7 @@ mkdir -p config/includes.chroot_after_packages/etc/skel/
 cp monscript.sh config/includes.chroot_after_packages/etc/skel/
 chmod +777 config/includes.chroot_after_packages/etc/skel/monscript.sh
 
-mkdir -p config/includes.chroot_after_packages/etc/skel/config/obs-studio
+mkdir -p config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/
 cp obs-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
 chmod +777 config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
 cp obs-global-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
