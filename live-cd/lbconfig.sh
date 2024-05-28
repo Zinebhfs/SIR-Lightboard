@@ -1,0 +1,39 @@
+#! /bin/sh
+
+set -ex
+
+# Config 
+lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode "debian" --system "live" --distribution "bookworm" --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"
+
+# Bootloader
+mkdir -p config/bootloaders/isolinux
+cp ../isolinux.cfg config/bootloaders/isolinux/
+
+# Install some packages
+echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
+echo obs-studio >> config/package-lists/desktop.list.chroot
+echo pip >> config/package-lists/desktop.list.chroot
+echo wget >> config/package-lists/desktop.list.chroot
+echo xdotool >> config/package-lists/desktop.list.chroot
+echo kbd >> config/package-lists/desktop.list.chroot
+echo python3-tk >> config/package-lists/desktop.list.chroot
+
+# Copy xsessionrc and monscript.sh as startup script
+cp ../obs.xsession config/includes.chroot_after_packages/etc/skel/.xsessionrc
+cp ../monscript.sh config/includes.chroot_after_packages/etc/skel/
+
+# Copy obs global config
+mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/
+cp ../obs-global-config.ini config/includes.chroot_after_packages/etc/skel/.config/obs-studio/global.ini
+
+# Copy obs profile
+mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile
+cp ../obs-profile-config.ini config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile/basic.ini
+chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile/basic.ini
+
+# Copy obs scene
+mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes
+cp ../obs-scene-config.json config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
+chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
+
+
