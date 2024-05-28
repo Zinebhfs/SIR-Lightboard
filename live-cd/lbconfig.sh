@@ -15,7 +15,7 @@ echo obs-studio >> config/package-lists/desktop.list.chroot
 echo pip >> config/package-lists/desktop.list.chroot
 echo wget >> config/package-lists/desktop.list.chroot
 echo xdotool >> config/package-lists/desktop.list.chroot
-echo "kb" >> config/package-lists/desktop.list.chroot
+echo "kbd" >> config/package-lists/desktop.list.chroot
 echo "python3-tk" >> config/package-lists/desktop.list.chroot
 
 # Copy xsessionrc and monscript.sh as startup script
