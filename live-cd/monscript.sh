@@ -4,10 +4,8 @@
 
 set -ex
 
-obs &
-
 wget https://github.com/Zinebhfs/SIR-Lightboard/archive/main.tar.gz
 tar -xvf main.tar.gz
-cd SIR-Lightboard-glue
+cd SIR-Lightboard-main
 pip install -r requirements.txt --break-system-packages
-python main.py
+python3 main.py
