@@ -19,6 +19,7 @@ echo kbd >> config/package-lists/desktop.list.chroot
 echo python3-tk >> config/package-lists/desktop.list.chroot
 
 # Copy xsessionrc and monscript.sh as startup script
+mkdir -p config/includes.chroot_after_packages/etc/skel/
 cp ../obs.xsession config/includes.chroot_after_packages/etc/skel/.xsessionrc
 cp ../monscript.sh config/includes.chroot_after_packages/etc/skel/
 
