@@ -2,28 +2,39 @@
 
 set -ex
 
+# Clean the build setup
+lb clean
+rm -rf cache/
+
+# Config 
 lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode "debian" --system "live" --distribution "bookworm" --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"
 
+# Copy crontab conf for executing monscript.sh
 mkdir -p config/includes.chroot_after_packages/etc/
 cp crontab config/includes.chroot_after_packages/etc/
 chmod +777 config/includes.chroot_after_packages/etc/crontab
 
+# Copy monscript.sh
 mkdir -p config/includes.chroot_after_packages/etc/skel/
 cp monscript.sh config/includes.chroot_after_packages/etc/skel/
 chmod +777 config/includes.chroot_after_packages/etc/skel/monscript.sh
 
+# Copy obs config
 mkdir -p config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/
 cp obs-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
 chmod +777 config/includes.chroot_after_packages/etc/skel/config/obs-studio/basic/profiles/untitled/basic.ini
 cp obs-global-config.ini config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
 chmod +777 config/includes.chroot_after_packages/etc/skel/config/obs-studio/gloabal.ini
 
+# Install some packages
 echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
 echo obs-studio >> config/package-lists/desktop.list.chroot
 echo git >> config/package-lists/desktop.list.chroot
 echo pip >> config/package-lists/desktop.list.chroot
+echo wget >> config/package-lists/desktop.list.chroot
+echo xdotool >> config/package-lists/desktop.list.chroot
 
-cp --recursive syslinux/ config/bootloaders
-cp --recursive syslinux_common/ config/bootloaders
+#cp --recursive syslinux/ config/bootloaders
+#cp --recursive syslinux_common/ config/bootloaders
 
 lb build

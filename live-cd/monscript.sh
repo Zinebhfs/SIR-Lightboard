@@ -3,7 +3,6 @@
 set -ex
 
 # Launch obs and made it fullscreen
-apt install xdotool -y
 obs --profile /home/user/.config/obs-studio/profiles/untitled/basic &
 sleep 10
 WID=`xdotool search --name "OBS"`
@@ -15,9 +14,8 @@ xdotool click --window $WID 3
 xdotool key Down Down Down Down Right Return
 
 
-apt install wget -y
 wget https://github.com/Zinebhfs/SIR-Lightboard/archive/refs/tags/rc.tar.gz
 tar -xvf rc.tar.gz
 cd SIR-Lightboard-rc
-pip install -r requirements.txt
+pip install -r requirements.txt -bre
 python main.py
