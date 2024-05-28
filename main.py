@@ -115,11 +115,12 @@ class RecordingApp:
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         root = Tk()
-        root.title("Status")
-        root.geometry("800x150")
+        root.geometry("400x100")
         root.attributes('-topmost', True)
-        root.geometry(f"{1000}x{200}+{root.winfo_screenwidth() - 1000}+{root.winfo_screenheight() - 200}")
-        label = Label(root, text="", font=("Cambria", 80))
+        root.overrideredirect(True)
+        root.wm_attributes('-transparentcolor', root['bg'])
+        root.geometry(f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}")
+        label = Label(root, text="", font=("Cambria", 50))
         label.pack()
         return root, label
 
@@ -141,11 +142,11 @@ class RecordingApp:
 
     def start_recording(self) -> None:
         self.obs_recorder.start_recording()
-        self.gui_queue.put(("update_status", "Recording started!", "IN PROGRESS", "green"))
+        self.gui_queue.put(("update_status", "EN COURS", "IN PROGRESS", "green"))
 
     def stop_recording(self) -> None:
         self.obs_recorder.stop_recording()
-        self.gui_queue.put(("update_status", "Recording stopped!", "COMPLETED", "red"))
+        self.gui_queue.put(("update_status", "TERMINÉ", "COMPLETED", "red"))
         self.gui_queue.put(("upload_video",))
 
     def upload_video(self) -> None:
