@@ -14,9 +14,10 @@ sudo apt install live-build
 
 To create a live CD, follow these steps:
 
-1. Create and navigate to the working directory:
+1. As the root directory of this repo, create and navigate to the working directory:
 
     ```bash
+    cd live-cd
     mkdir live
     cd live
     ```
