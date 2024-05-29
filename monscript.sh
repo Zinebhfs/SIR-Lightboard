@@ -12,7 +12,7 @@ chmod +777 /home/user/.config/obs-studio/global.ini
 # Copy obs profile
 mkdir -p /home/user/.config/obs-studio/basic/profiles/MyProfile
 cp /home/user/SIR-Lightboard/obs/obs-profile-config.ini /home/user/.config/obs-studio/basic/profiles/MyProfile/basic.ini
-chmod +777 /home/user//.config/obs-studio/basic/profiles/MyProfile/basic.ini
+chmod +777 /home/user/.config/obs-studio/basic/profiles/MyProfile/basic.ini
 
 # Copy obs scene
 mkdir -p /home/user/.config/obs-studio/basic/scenes
