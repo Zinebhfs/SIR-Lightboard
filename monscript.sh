@@ -24,7 +24,4 @@ obs &
 sleep 5
 
 sudo pip install -r requirements.txt --break-system-packages
-
-sleep 5
-
 sudo python3 main.py
