@@ -24,7 +24,6 @@ chmod +777 config/includes.chroot_after_packages/etc/skel/.xsessionrc
 
 # These config file for the main python app is not in git, because it's sensistive (API keys)
 echo "These config file for the main python app is not in git, because it's sensistive (API keys). If they are not present, this script will fail."
-mkdir -p config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main
 cp ../../.env config/includes.chroot_after_packages/etc/skel/.env
 chmod +777 config/includes.chroot_after_packages/etc/skel/.env
 cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/token.pkl
