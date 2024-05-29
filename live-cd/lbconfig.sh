@@ -19,32 +19,15 @@ echo python3-tk >> config/package-lists/desktop.list.chroot
 
 # Copy xsessionrc and monscript.sh as startup script
 mkdir -p config/includes.chroot_after_packages/etc/skel/
-cp ../obs.xsession config/includes.chroot_after_packages/etc/skel/.xsessionrc
+cp ../start.xsession config/includes.chroot_after_packages/etc/skel/.xsessionrc
 chmod +777 config/includes.chroot_after_packages/etc/skel/.xsessionrc
-cp ../monscript.sh config/includes.chroot_after_packages/etc/skel/monscript.sh
-chmod +777 config/includes.chroot_after_packages/etc/skel/monscript.sh
-
-# Copy obs global config
-mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/
-cp ../obs-global-config.ini config/includes.chroot_after_packages/etc/skel/.config/obs-studio/global.ini
-chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/global.ini
-
-# Copy obs profile
-mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile
-cp ../obs-profile-config.ini config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile/basic.ini
-chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/profiles/MyProfile/basic.ini
-
-# Copy obs scene
-mkdir -p config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes
-cp ../obs-scene-config.json config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
-chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
 
 # These config file for the main python app is not in git, because it's sensistive (API keys)
 echo "These config file for the main python app is not in git, because it's sensistive (API keys). If they are not present, this script will fail."
 mkdir -p config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main
 cp ../../.env config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/.env
 chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/.env
-cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
-chmod +777 config/includes.chroot_after_packages/etc/skel/.config/obs-studio/basic/scenes/MyScene.json
+cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/token.pkl
+chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/token.pkl
 cp ../../client_secret.json config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/client_secret.json
 chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/client_secret.json
