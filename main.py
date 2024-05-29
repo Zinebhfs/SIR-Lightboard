@@ -219,7 +219,12 @@ class RecordingApp:
         elif event.name == '2':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
-
+        elif event.name == '3':
+            print("Quit key pressed")
+            keyboard.unhook_all()
+            self.obs_recorder.disconnect()
+            self.gui_queue.put(("quit",))
+            exit()
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
