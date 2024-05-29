@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # This script need to be launch after the gui is fully loaded
 
@@ -19,9 +19,10 @@ mkdir -p /home/user/.config/obs-studio/basic/scenes
 cp /home/user/SIR-Lightboard-main/obs/obs-scene-config.json /home/user/.config/obs-studio/basic/scenes/MyScene.json
 chmod +777 /home/user/.config/obs-studio/basic/scenes/MyScene.json
 
+obs &
+
+sleep 5
 
 sudo pip install -r requirements.txt --break-system-packages
-
-obs &
 
 sudo python3 main.py
