@@ -6,4 +6,4 @@ tar -xvf main.tar.gz
 cd SIR-Lightboard-main
 
 # Execute the script
-sudo bash /home/user/SIR-Lightboard-main/monscript.sh
+bash /home/user/SIR-Lightboard-main/monscript.sh
