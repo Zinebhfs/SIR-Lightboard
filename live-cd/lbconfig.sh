@@ -13,7 +13,7 @@ cp ../isolinux.cfg config/bootloaders/isolinux/
 echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
 echo obs-studio >> config/package-lists/desktop.list.chroot
 echo pip >> config/package-lists/desktop.list.chroot
-echo wget >> config/package-lists/desktop.list.chroot
+echo git >> config/package-lists/desktop.list.chroot
 echo kbd >> config/package-lists/desktop.list.chroot
 echo python3-tk >> config/package-lists/desktop.list.chroot
 
@@ -25,9 +25,9 @@ chmod +777 config/includes.chroot_after_packages/etc/skel/.xsessionrc
 # These config file for the main python app is not in git, because it's sensistive (API keys)
 echo "These config file for the main python app is not in git, because it's sensistive (API keys). If they are not present, this script will fail."
 mkdir -p config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main
-cp ../../.env config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/.env
-chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/.env
-cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/token.pkl
-chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/token.pkl
-cp ../../client_secret.json config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/client_secret.json
-chmod +777 config/includes.chroot_after_packages/etc/skel/SIR-Lightboard-main/client_secret.json
+cp ../../.env config/includes.chroot_after_packages/etc/skel/.env
+chmod +777 config/includes.chroot_after_packages/etc/skel/.env
+cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/token.pkl
+chmod +777 config/includes.chroot_after_packages/etc/skel/token.pkl
+cp ../../client_secret.json config/includes.chroot_after_packages/etc/skel/client_secret.json
+chmod +777 config/includes.chroot_after_packages/etc/skel/client_secret.json

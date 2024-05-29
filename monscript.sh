@@ -26,4 +26,4 @@ obs &
 sleep 5
 # if web socket pas ouvert alors pas python A FAIRE
 
-sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py
+sudo python3 ./home/user/SIR-Lightboard/main.py

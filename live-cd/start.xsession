@@ -7,4 +7,4 @@ git clone https://github.com/Zinebhfs/SIR-Lightboard
 cd SIR-Lightboard
 
 # Execute the script
-sh /home/user/SIR-Lightboard/monscript.sh
+sh ./monscript.sh
