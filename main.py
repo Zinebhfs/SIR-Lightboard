@@ -118,7 +118,6 @@ class RecordingApp:
         root.geometry("400x100")
         root.attributes('-topmost', True)
         root.overrideredirect(True)
-        root.wm_attributes('-transparentcolor', root['bg'])
         root.geometry(f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}")
         label = Label(root, text="", font=("Cambria", 50))
         label.pack()
@@ -179,7 +178,12 @@ class RecordingApp:
         elif event.name == '2':
             print("Stop key pressed: stopping recording")
             self.stop_recording()
-
+        elif event.name == '3':
+            print("Quit key pressed")
+            keyboard.unhook_all()
+            self.obs_recorder.disconnect()
+            self.gui_queue.put(("quit",))
+            exit()
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
