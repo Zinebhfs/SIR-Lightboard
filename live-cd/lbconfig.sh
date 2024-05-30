@@ -7,7 +7,7 @@ lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr u
           --mode "debian" --system "live" --distribution "bookworm" \
           --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"  \
           --apt-recommends "false"
-          
+
 # Bootloader
 mkdir -p config/bootloaders/isolinux
 cp ../isolinux.cfg config/bootloaders/isolinux/
