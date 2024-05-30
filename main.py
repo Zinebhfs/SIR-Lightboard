@@ -20,7 +20,7 @@ from keyboard import KeyboardEvent
 import time
 nest_asyncio.apply()
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
 class Logger:
@@ -28,10 +28,11 @@ class Logger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
 
-        # Create handlers
+        # Create console handler for logging
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
 
+        # Create file handler for logging
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(logging.DEBUG)
 
