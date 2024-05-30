@@ -25,6 +25,6 @@ obs &
 
 sleep 5
 # if web socket pas ouvert alors pas python A FAIRE
-touch /homr/user/toto1
+touch /home/user/toto1
 sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py &
-touch /homr/user/toto2
+touch /home/user/toto2
