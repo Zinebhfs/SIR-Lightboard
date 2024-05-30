@@ -4,6 +4,8 @@
 
 set -ex
 
+cd /home/user/SIR-Lightboard
+
 # Copy obs global config
 mkdir -p /home/user/.config/obs-studio/
 cp /home/user/SIR-Lightboard/obs/obs-global-config.ini /home/user/.config/obs-studio/global.ini
