@@ -51,7 +51,9 @@ class Logger:
 class OBSRecorder:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
-        self.host: str = os.getenv("OBS_HOST", "localhost")
+        #self.host: str = os.getenv("OBS_HOST", "localhost")
+        self.host: str = "134.214.202.160"
+
         self.port: int = int(os.getenv("OBS_PORT", 4455))
         self.video_path: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
         self.client = obsws(self.host, self.port)
