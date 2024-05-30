@@ -11,6 +11,7 @@ This script is designed to automate the process of recording video using OBS Stu
 - **Discord Notification**: Notifies a Discord channel with the URL of the uploaded video.
 - **Keyboard Control**: Allows starting and stopping recording using keyboard shortcuts.
 - **GUI Status Window**: Displays the current status of the recording process.
+- **Live ISO Support**: Can be integrated into a live ISO environment for easy deployment. (see [build_iso.md](build_iso.md))
 
 ## Prerequisites
 
