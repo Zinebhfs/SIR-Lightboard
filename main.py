@@ -236,5 +236,6 @@ class RecordingApp:
 
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
+    app_logger.info(f"Status avant lancer mon object RecordingApp")
     app = RecordingApp(app_logger)
     app.run()
