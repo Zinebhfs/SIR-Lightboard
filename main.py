@@ -55,7 +55,23 @@ class OBSRecorder:
         self.port: int = int(os.getenv("OBS_PORT", 4455))
         self.video_path: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
         self.client = obsws(self.host, self.port)
-        self.client.connect()
+
+        self.connect_with_retry()
+        
+    def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
+        connected = False
+        for _ in range(retries):
+            try:
+                self.client.connect()
+                connected = True
+                break
+            except Exception as e:
+                self.logger.warning(f"Failed to connect to OBS at {self.host}:{self.port}. Retrying in {delay} seconds...")
+                time.sleep(delay)
+        
+        if not connected:
+            raise ConnectionError(f"Unable to connect to OBS at {self.host}:{self.port} after {retries * delay} seconds.")
+        
         self.logger.info(f"Connected to OBS at {self.host}:{self.port}")
 
     def start_recording(self) -> None:
