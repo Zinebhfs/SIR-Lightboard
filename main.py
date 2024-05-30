@@ -229,13 +229,13 @@ class RecordingApp:
             exit()
 
     def on_press(self, event: KeyboardEvent) -> None:
-        if event.name == '1':
+        if event.name == '"':
             self.logger.info("Record key pressed: starting recording")
             self.start_recording()
-        elif event.name == '2':
+        elif event.name == 'é':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
-        # elif event.name == '3':
+        # elif event.name == '&':
         #     print("Quit key pressed")
         #     keyboard.unhook_all()
         #     self.obs_recorder.disconnect()
