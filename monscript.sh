@@ -4,6 +4,8 @@
 
 set -ex
 
+cd /home/user/SIR-Lightboard
+
 # Copy obs global config
 mkdir -p /home/user/.config/obs-studio/
 cp /home/user/SIR-Lightboard/obs/obs-global-config.ini /home/user/.config/obs-studio/global.ini
@@ -23,7 +25,8 @@ sudo pip install -r requirements.txt --break-system-packages
 
 obs &
 
-sleep 5
+sleep 20
 # if web socket pas ouvert alors pas python A FAIRE
-
-sudo python3 /home/user/SIR-Lightboard/main.py
+touch /home/user/toto1
+sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py 2> /home/user/error.txt
+touch /home/user/toto2
