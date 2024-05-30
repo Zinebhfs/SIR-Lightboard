@@ -9,13 +9,17 @@ lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" 
 mkdir -p config/bootloaders/isolinux
 cp ../isolinux.cfg config/bootloaders/isolinux/
 
-# Install some packages
-echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
-echo obs-studio >> config/package-lists/desktop.list.chroot
-echo pip >> config/package-lists/desktop.list.chroot
-echo git >> config/package-lists/desktop.list.chroot
-echo kbd >> config/package-lists/desktop.list.chroot
-echo python3-tk >> config/package-lists/desktop.list.chroot
+# Install some packages, add the package name you want in the list if you want to install it
+{
+    echo task-cinnamon-desktop
+    echo obs-studio
+    echo pip
+    echo git
+    echo kbd
+    echo python3-tk
+    echo user-setup
+    echo sudo
+} > config/package-lists/desktop.list.chroot    
 
 # Copy xsessionrc and monscript.sh as startup script
 mkdir -p config/includes.chroot_after_packages/etc/skel/
