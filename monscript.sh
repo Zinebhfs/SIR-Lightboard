@@ -25,6 +25,4 @@ sudo pip install -r requirements.txt --break-system-packages
 
 obs &
 
-sleep 20
-# if web socket pas ouvert alors pas python A FAIRE
-sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py 2> /home/user/error.txt
+sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py 2> /home/user/error.txt &
