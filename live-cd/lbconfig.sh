@@ -3,7 +3,7 @@
 set -ex
 
 # Config 
-lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr" --mode "debian" --system "live" --distribution "bookworm" --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"
+lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr username=user" --mode "debian" --system "live" --distribution "bookworm" --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid" --apt-recommends "false"
 
 # Bootloader
 mkdir -p config/bootloaders/isolinux
@@ -11,9 +11,11 @@ cp ../isolinux.cfg config/bootloaders/isolinux/
 
 # Install some packages
 echo task-cinnamon-desktop > config/package-lists/desktop.list.chroot
-echo obs-studio >> config/package-lists/desktop.list.chroot
+echo user-setup >> config/package-lists/desktop.list.chroot
+echo sudo >> config/package-lists/desktop.list.chroot
 echo pip >> config/package-lists/desktop.list.chroot
 echo git >> config/package-lists/desktop.list.chroot
+echo obs-studio >> config/package-lists/desktop.list.chroot
 echo kbd >> config/package-lists/desktop.list.chroot
 echo python3-tk >> config/package-lists/desktop.list.chroot
 
