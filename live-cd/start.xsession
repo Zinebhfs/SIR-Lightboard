@@ -12,9 +12,7 @@ done
 
 # Get 
 git clone https://github.com/Zinebhfs/SIR-Lightboard
-#wget https://github.com/Zinebhfs/SIR-Lightboard/archive/main.tar.gz
-#tar -xvf main.tar.gz
-
 
 # Execute the script
+cd SIR-Lightboard/
 sh ./monscript.sh
