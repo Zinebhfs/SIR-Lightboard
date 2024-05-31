@@ -5,8 +5,7 @@ set -ex
 # Config 
 lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr username=user" \
           --mode "debian" --system "live" --distribution "bookworm" \
-          --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"  \
-          --apt-recommends "false"
+          --archive-areas "main contrib non-free non-free-firmware" --binary-images "iso-hybrid"
 
 # Bootloader
 mkdir -p config/bootloaders/isolinux
@@ -20,8 +19,6 @@ cp ../isolinux.cfg config/bootloaders/isolinux/
     echo git
     echo kbd
     echo python3-tk
-    echo user-setup
-    echo sudo
 } > config/package-lists/desktop.list.chroot    
 
 # Copy xsessionrc and monscript.sh as startup script
