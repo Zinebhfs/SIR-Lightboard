@@ -3,7 +3,6 @@
 # This script need to be launch after the gui is fully loaded
 
 set -ex
-touch /home/user/toto
 
 #Mount external disk
 sudo mkdir -p /mnt/nvme0n1
