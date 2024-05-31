@@ -2,6 +2,9 @@
 
 set -ex
 
+mkdir -p live/
+cd live/
+
 # Config 
 lb config --bootappend-live "boot=live locales=fr_FR.UTF-8 keyboard-layouts=fr username=user" \
           --mode "debian" --system "live" --distribution "bookworm" \
