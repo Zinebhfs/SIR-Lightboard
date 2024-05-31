@@ -49,7 +49,7 @@ DISCORD_CHANNEL_ID="your_discord_channel_id_here"
 Then run the following commands to prepare the live directory :
 ```bash
 mkdir live-cd/live
-cp live-cd/live
+cd live-cd/live
 cp ../lbconfig.sh .
 chmod +x lbconfig.sh
 ./lbconfig.sh
