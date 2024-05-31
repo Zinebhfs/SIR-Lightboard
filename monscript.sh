@@ -3,6 +3,7 @@
 # This script need to be launch after the gui is fully loaded
 
 set -ex
+touch /home/user/toto
 
 #Mount external disk
 sudo mkdir -p /mnt/nvme0n1
@@ -25,8 +26,6 @@ chmod +777 /home/user/.config/obs-studio/basic/profiles/MyProfile/basic.ini
 mkdir -p /home/user/.config/obs-studio/basic/scenes
 cp /home/user/SIR-Lightboard/obs/obs-scene-config.json /home/user/.config/obs-studio/basic/scenes/MyScene.json
 chmod +777 /home/user/.config/obs-studio/basic/scenes/MyScene.json
-
-touch /home/user/toto
 
 sudo pip install -r requirements.txt --break-system-packages
 
