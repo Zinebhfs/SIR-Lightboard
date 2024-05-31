@@ -4,6 +4,11 @@
 
 set -ex
 
+#Mount external disk
+sudo mkdir -p /mnt/nvme0n1
+sudo mount /dev/nvme0n1 /mnt/nvme0n1
+sudo chown -R user /mnt/nvme0n1
+
 cd /home/user/SIR-Lightboard
 
 # Copy obs global config
