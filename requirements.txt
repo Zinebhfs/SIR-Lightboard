@@ -10,3 +10,6 @@ google-auth-httplib2==0.2.0
 obs-websocket-py==1.0
 requests==2.28.1
 keyboard==0.13.5
+ndg-httpsclient
+pyopenssl
+pyasn1
