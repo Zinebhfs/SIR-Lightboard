@@ -26,6 +26,8 @@ mkdir -p /home/user/.config/obs-studio/basic/scenes
 cp /home/user/SIR-Lightboard/obs/obs-scene-config.json /home/user/.config/obs-studio/basic/scenes/MyScene.json
 chmod +777 /home/user/.config/obs-studio/basic/scenes/MyScene.json
 
+touch /home/user/toto
+
 sudo pip install -r requirements.txt --break-system-packages
 
 obs &
