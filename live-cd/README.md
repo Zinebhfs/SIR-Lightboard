@@ -14,23 +14,17 @@ sudo apt install live-build
 
 To create a live CD, follow these steps:
 
-1. As the root directory of this repo, create and navigate to the working directory:
-
-    ```bash
-    cd live-cd
-    mkdir live
-    cd live
-    ```
+1. Make sure you have the `.env` `client_secret.json` `token.pkl` files in the root directory (SIR-Lightboard).
     
-1. Copy the `lbconfig.sh` file to the working directory and execute it:
+1. Execute the `lbconfig.sh` file:
 
     ```bash
-    cp ../lbconfig.sh .
-    ./lbconfig.sh
+    sh ./lbconfig.sh
     ```
 
 1. Build the live CD:
 
     ```bash
+    cd live/
     sudo lb build
     ```
