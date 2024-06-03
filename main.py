@@ -276,7 +276,7 @@ class DiscordNotifier:
         """
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        message = f"Here is the URL of the latest video that has been published: \n{url}"
+        message = f"Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
         loop.run_until_complete(self.send_message(message))
 
 
@@ -319,10 +319,10 @@ class RecordingApp:
         root.overrideredirect(True)
         root.configure(background='white')  # Set the background color to white
         root.geometry(f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}")
-        label = Label(root, text="", font=("Cambria", 50), bg='white')  # Set widget background color to white
+        label = Label(root, text="EN ATTENTE", font=("Multicolore", 45), bg='white')  # Set widget background color to white
         label.pack()
         return root, label
-
+    
     def update_status(self, message: str, status: str, color: str) -> None:
         """
         Updates the status message in the GUI.
