@@ -374,6 +374,10 @@ class RecordingApp:
             if not video_file:
                 self.logger.error("No video file found for upload")
                 return
+
+            # Wait for obs to render all the video before uploading
+            sleep(5)
+            
             video_url = self.youtube_uploader.upload_video(video_file)
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(video_url)
