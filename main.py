@@ -397,10 +397,10 @@ class RecordingApp:
         Args:
             event (KeyboardEvent): The keyboard event.
         """
-        if event.name == '3':
+        if event.name == '"':
             self.logger.info("Record key pressed: starting recording")
             self.start_recording()
-        elif event.name == '2':
+        elif event.name == 'é':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
         # elif event.name == '1':
