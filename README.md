@@ -46,3 +46,45 @@ The script utilizes environment variables for configuration. Ensure the followin
 
 - Ensure OBS Studio is running and configured correctly before executing the script.
 - Handle Google API credentials and Discord bot token securely to prevent unauthorized access.
+
+### Sequence diagram
+Sequence diagram of the main workflow of the script.
+```mermaid
+sequenceDiagram
+    participant User
+    participant RecordingApp
+    participant OBSRecorder
+    participant YouTubeUploader
+    participant DiscordNotifier
+    participant OBSWebSocket as OBS WebSocket
+    participant GoogleAPI as Google API
+    participant DiscordAPI as Discord API
+
+    Note right of User: Démarrage de l'application
+
+    User ->> RecordingApp: run()
+    RecordingApp ->> OBSRecorder: start_recording()
+    OBSRecorder ->> OBSWebSocket: StartRecord
+    RecordingApp ->> GUI: update_status("EN COURS")
+
+    Note right of User: Fin de l'enregistrement
+
+    User ->> RecordingApp: stop_recording()
+    RecordingApp ->> OBSRecorder: stop_recording()
+    OBSRecorder ->> OBSWebSocket: StopRecord
+    RecordingApp ->> GUI: update_status("TERMINÉ")
+    RecordingApp ->> OBSRecorder: find_latest_video()
+    OBSRecorder ->> FileSystem: Get latest video file path
+    FileSystem -->> OBSRecorder: Latest video file path
+    OBSRecorder -->> RecordingApp: latest_video
+    RecordingApp ->> YouTubeUploader: upload_video(latest_video)
+    YouTubeUploader ->> GoogleAPI: Upload video
+    GoogleAPI -->> YouTubeUploader: video_url
+    YouTubeUploader -->> RecordingApp: video_url
+    RecordingApp ->> DiscordNotifier: send_discord_message(video_url)
+    DiscordNotifier ->> DiscordAPI: send_message(video_url)
+    DiscordAPI -->> DiscordNotifier: Confirmation
+    DiscordNotifier -->> RecordingApp: Confirmation
+
+    Note right of RecordingApp: Fin du processus
+```
