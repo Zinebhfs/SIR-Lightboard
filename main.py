@@ -261,7 +261,7 @@ class YouTubeUploader:
                 'tags': TXT_YT_UPLOAD_TAGS
             },
             'status': {
-                'privacyStatus': 'private'
+                'privacyStatus': 'unlisted'
             }
         }
         media_body = MediaFileUpload(video_file, chunksize=-1, resumable=True)
