@@ -23,7 +23,7 @@ nest_asyncio.apply()
 # Load environment variables from .env file
 load_dotenv()
 
-# Text variables for translation
+# Text variables
 TXT_LOG_FILE = 'lightboard.txt'
 TXT_CONSOLE_HANDLER_LEVEL = logging.DEBUG
 TXT_FILE_HANDLER_LEVEL = logging.DEBUG
@@ -63,6 +63,8 @@ TXT_GUI_COMPLETED = 'TERMINÉ'
 TXT_GUI_ERROR = 'ERROR'
 TXT_GUI_GOOGLE_QUOTA_ERROR = 'Google quota exceeded'
 TXT_GUI_UNEXPECTED_ERROR = 'An unexpected error occurred'
+
+import logging
 
 class Logger:
     """
@@ -250,144 +252,200 @@ class YouTubeUploader:
             video_file (str): The path to the video file.
         
         Returns:
-            str: The video ID of the uploaded video.
+            str: The ID of the uploaded video.
         """
         body = {
             'snippet': {
                 'title': TXT_YT_UPLOAD_TITLE,
                 'description': TXT_YT_UPLOAD_DESCRIPTION,
-                'tags': TXT_YT_UPLOAD_TAGS,
-                'categoryId': '22'
+                'tags': TXT_YT_UPLOAD_TAGS
             },
             'status': {
-                'privacyStatus': 'public'
+                'privacyStatus': 'private'
             }
         }
-
         media_body = MediaFileUpload(video_file, chunksize=-1, resumable=True)
         request = self.youtube.videos().insert(part='snippet,status', body=body, media_body=media_body)
-
         response = None
         while response is None:
             status, response = request.next_chunk()
             if status:
-                self.logger.info(f"Uploaded {int(status.progress() * 100)}%.")
-
+                self.logger.debug(f"Uploaded {int(status.progress() * 100)}%")
         self.logger.info(TXT_YT_VIDEO_UPLOADED.format(video_id=response['id']))
         return response['id']
 
 
-class DiscordNotifier():
+class DiscordNotifier:
     """
-    A class to manage sending notifications to a Discord channel.
+    A class to send notifications to a Discord channel.
 
     Attributes:
         logger (logging.Logger): The logger instance.
+        token (str): The Discord bot token.
         channel_id (int): The ID of the Discord channel.
+        client (discord.Client): The Discord client.
     """
-    def __init__(self, logger: logging.Logger, channel_id: int):
+    def __init__(self, logger: logging.Logger):
         """
-        Initializes the DiscordNotifier with a logger instance and channel ID.
+        Initializes the DiscordNotifier with a logger instance.
         
         Args:
             logger (logging.Logger): The logger instance.
-            channel_id (int): The ID of the Discord channel.
         """
         self.logger = logger
-        self.channel_id = channel_id
+        self.token: str = TXT_DISCORD_BOT_TOKEN
+        self.channel_id: int = TXT_DISCORD_CHANNEL_ID
+        self.client = discord.Client(intents=discord.Intents.default())
         self.logger.info(TXT_DISCORD_INIT)
 
-    async def on_ready(self):
+    async def send_message(self, message: str) -> None:
         """
-        Called when the Discord client is ready.
-        """
-        self.logger.info(f"Logged in as {self.user} (ID: {self.user.id})")
-
-    async def send_message(self, message: str):
-        """
-        Sends a message to the configured Discord channel.
+        Sends a message to the specified Discord channel.
         
         Args:
             message (str): The message to send.
         """
-        channel = self.get_channel(self.channel_id)
-        if channel:
-            await channel.send(message)
-            self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
-        else:
-            self.logger.error(TXT_DISCORD_CHANNEL_ERROR)
+        @self.client.event
+        async def on_ready():
+            try:
+                channel = self.client.get_channel(self.channel_id)
+                await channel.send(message)
+                self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
+            except Exception as e:
+                self.logger.error(TXT_DISCORD_CHANNEL_ERROR)
+            await self.client.close()
+
+        await self.client.start(self.token)
+
+    def notify(self, video_id: str) -> None:
+        """
+        Notifies the Discord channel with the uploaded video URL.
+        
+        Args:
+            video_id (str): The ID of the uploaded video.
+        """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.send_message(TXT_DISCORD_MSG_TEMPLATE.format(url=TXT_YT_VIDEO_URL.format(video_id=video_id))))
+
+
+class GuiApp:
+    """
+    A class to manage the GUI application.
+
+    Attributes:
+        window (Tk): The main window of the GUI.
+        label (Label): The label to display the status.
+    """
+    def __init__(self):
+        """
+        Initializes the GUI application.
+        """
+        self.window = Tk()
+        self.window.geometry("400x100")
+        self.window.overrideredirect(True)
+        self.window.configure(background='white')  # Set the background color to white
+        self.window.geometry(f"{400}x{100}+{self.window.winfo_screenwidth() - 400}+{self.window.winfo_screenheight() - 100}")
+        self.window.title("Lightboard Status")
+        self.label = Label(self.window, text=TXT_GUI_WAITING, font=("Multicolore", 45), bg='white')
+        self.label.pack()
+
+    def update_label(self, text: str) -> None:
+        """
+        Updates the text of the label.
+        
+        Args:
+            text (str): The text to display.
+        """
+        self.label.config(text=text)
+        self.window.update_idletasks()
+
+    def run(self):
+        """
+        Runs the main loop of the GUI.
+        """
+        self.window.mainloop()
 
 
 class LightboardApp:
     """
-    The main application class for the Lightboard app.
+    The main application class to integrate OBS recording, YouTube upload, and Discord notification.
 
     Attributes:
         logger (logging.Logger): The logger instance.
+        gui (GuiApp): The GUI application instance.
         obs_recorder (OBSRecorder): The OBS recorder instance.
         youtube_uploader (YouTubeUploader): The YouTube uploader instance.
         discord_notifier (DiscordNotifier): The Discord notifier instance.
+        event_queue (queue.Queue): The event queue for keyboard events.
     """
     def __init__(self):
         """
         Initializes the LightboardApp.
         """
-        self.logger = Logger(__name__).get_logger()
-        self.obs_recorder = OBSRecorder(self.logger)
-        self.youtube_uploader = YouTubeUploader(self.logger)
-        self.discord_notifier = DiscordNotifier(self.logger, TXT_DISCORD_CHANNEL_ID)
+        # Set up logging
+        logger = Logger('LightboardApp').get_logger()
+        logger.info(TXT_LOGGER_STARTING_APP)
 
-    def run(self):
+        self.logger = logger
+        self.gui = GuiApp()
+        self.obs_recorder = OBSRecorder(logger)
+        self.youtube_uploader = YouTubeUploader(logger)
+        self.discord_notifier = DiscordNotifier(logger)
+
+        self.event_queue = queue.Queue()
+
+    def on_key_press(self, event: KeyboardEvent) -> None:
         """
-        Runs the main loop of the Lightboard app.
-        """
-        self.logger.info(TXT_LOGGER_STARTING_APP)
-
-        # Set up GUI
-        root = Tk()
-        status_label = Label(root, text=TXT_GUI_WAITING, font=("Helvetica", 48))
-        status_label.pack()
-
-        def update_status(text):
-            status_label.config(text=text)
-            root.update_idletasks()
-
-        def handle_key_event(event: KeyboardEvent):
-            if event.name == "f9" and event.event_type == "down":
-                threading.Thread(target=self.process_recording, args=(update_status,)).start()
-
-        keyboard.hook(handle_key_event)
-        root.mainloop()
-
-    def process_recording(self, update_status):
-        """
-        Handles the recording process, updating the GUI and uploading the video.
-
+        Handles the key press event to start and stop recording.
+        
         Args:
-            update_status (function): Function to update the status label in the GUI.
+            event (KeyboardEvent): The keyboard event.
         """
-        try:
-            update_status(TXT_GUI_IN_PROGRESS)
-            self.obs_recorder.start_recording()
-            time.sleep(5)  # Record for 5 seconds for example purposes
-            self.obs_recorder.stop_recording()
-            latest_video = self.obs_recorder.find_latest_video()
-            if latest_video:
-                video_id = self.youtube_uploader.upload_video(latest_video)
-                discord_message = TXT_DISCORD_MSG_TEMPLATE.format(url=TXT_YT_VIDEO_URL.format(video_id=video_id))
-                asyncio.run(self.discord_notifier.send_message(discord_message))
-            update_status(TXT_GUI_COMPLETED)
-        except googleapiclient.errors.HttpError as e:
-            if e.resp.status in [403, 429]:
-                update_status(TXT_GUI_GOOGLE_QUOTA_ERROR)
-            else:
-                update_status(TXT_GUI_ERROR)
-            self.logger.exception("An error occurred during the recording process.")
-        except Exception:
-            update_status(TXT_GUI_UNEXPECTED_ERROR)
-            self.logger.exception("An unexpected error occurred during the recording process.")
-        finally:
-            self.obs_recorder.disconnect()
+        if event.event_type == keyboard.KEY_DOWN:
+            if event.name == '"':
+                self.logger.debug('Start recording key pressed')
+                self.event_queue.put('start')
+            elif event.name == 'é':
+                self.logger.debug('Stop recording key pressed')
+                self.event_queue.put('stop')
+
+    def process_events(self) -> None:
+        """
+        Processes the events in the event queue.
+        """
+        while True:
+            event = self.event_queue.get()
+            if event == 'start':
+                self.gui.update_label(TXT_GUI_IN_PROGRESS)
+                self.obs_recorder.start_recording()
+            elif event == 'stop':
+                self.obs_recorder.stop_recording()
+                self.gui.update_label(TXT_GUI_COMPLETED)
+                latest_video = self.obs_recorder.find_latest_video()
+                if latest_video:
+                    try:
+                        video_id = self.youtube_uploader.upload_video(latest_video)
+                        self.discord_notifier.notify(video_id)
+                    except googleapiclient.errors.HttpError as e:
+                        if e.resp.status == 403:
+                            self.gui.update_label(TXT_GUI_GOOGLE_QUOTA_ERROR)
+                        else:
+                            self.gui.update_label(TXT_GUI_UNEXPECTED_ERROR)
+                        self.logger.error(f"Error uploading video: {e}")
+                else:
+                    self.logger.error("No video found to upload")
+
+    def run(self) -> None:
+        """
+        Runs the main application.
+        """
+        threading.Thread(target=self.process_events, daemon=True).start()
+
+        # Set up keyboard event listeners
+        keyboard.on_press(self.on_key_press)
+
+        # Run the GUI application
+        self.gui.run()
 
 
 if __name__ == "__main__":
