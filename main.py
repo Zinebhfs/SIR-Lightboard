@@ -349,7 +349,7 @@ class GuiApp:
         self.label = Label(self.window, text=TXT_GUI_WAITING, font=("Multicolore", 45), bg='white')
         self.label.pack()
 
-    def update_label(self, text: str) -> None:
+    def update_label(self, text: str, color: str) -> None:
         """
         Updates the text of the label.
         
@@ -416,11 +416,11 @@ class LightboardApp:
         while True:
             event = self.event_queue.get()
             if event == 'start':
-                self.gui.update_label(TXT_GUI_IN_PROGRESS)
+                self.gui.update_label(TXT_GUI_IN_PROGRESS, "green")
                 self.obs_recorder.start_recording()
             elif event == 'stop':
                 self.obs_recorder.stop_recording()
-                self.gui.update_label(TXT_GUI_COMPLETED)
+                self.gui.update_label(TXT_GUI_COMPLETED, "red")
                 latest_video = self.obs_recorder.find_latest_video()
                 if latest_video:
                     try:
@@ -428,9 +428,9 @@ class LightboardApp:
                         self.discord_notifier.notify(video_id)
                     except googleapiclient.errors.HttpError as e:
                         if e.resp.status == 403:
-                            self.gui.update_label(TXT_GUI_GOOGLE_QUOTA_ERROR)
+                            self.gui.update_label(TXT_GUI_GOOGLE_QUOTA_ERROR, "red")
                         else:
-                            self.gui.update_label(TXT_GUI_UNEXPECTED_ERROR)
+                            self.gui.update_label(TXT_GUI_UNEXPECTED_ERROR, "red")
                         self.logger.error(f"Error uploading video: {e}")
                 else:
                     self.logger.error("No video found to upload")
