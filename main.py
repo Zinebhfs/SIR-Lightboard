@@ -356,7 +356,7 @@ class GuiApp:
         Args:
             text (str): The text to display.
         """
-        self.label.config(text=text)
+        self.label.config(text=text, fg=color)
         self.window.update_idletasks()
 
     def run(self):
