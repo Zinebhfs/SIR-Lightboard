@@ -1,14 +1,14 @@
 #!/bin/sh
 
 # This script need to be launch after the gui is fully loaded
-
 set -ex
 
-#Mount external disk
+# Mount external disk
 sudo mkdir -p /mnt/nvme0n1
 sudo mount /dev/nvme0n1 /mnt/nvme0n1
 sudo chown -R user /mnt/nvme0n1
 
+# Move into the repository SIR-Lightboard
 cd /home/user/SIR-Lightboard
 
 # Copy obs global config
@@ -26,8 +26,11 @@ mkdir -p /home/user/.config/obs-studio/basic/scenes
 cp /home/user/SIR-Lightboard/obs/obs-scene-config.json /home/user/.config/obs-studio/basic/scenes/MyScene.json
 chmod +777 /home/user/.config/obs-studio/basic/scenes/MyScene.json
 
+# Install all of the packets write in the requirements.txt
 sudo pip install -r requirements.txt --break-system-packages
 
+# Launch obs
 obs &
 
+# Get the log into the error.txt file
 sudo /usr/bin/python3 /home/user/SIR-Lightboard/main.py 2> /home/user/error.txt &
