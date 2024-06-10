@@ -65,41 +65,71 @@ Sequence diagram of the main workflow of the script.
 ```mermaid
 sequenceDiagram
     participant User
-    participant RecordingApp
+    participant LightboardApp
     participant OBSRecorder
     participant YouTubeUploader
     participant DiscordNotifier
     participant OBSWebSocket as OBS WebSocket
     participant GoogleAPI as Google API
     participant DiscordAPI as Discord API
+    participant GUI
+    participant Keyboard as Keyboard Listener
+    participant FileSystem
 
     Note right of User: Démarrage de l'application
 
-    User ->> RecordingApp: run()
-    RecordingApp ->> OBSRecorder: start_recording()
+    User ->> LightboardApp: run()
+    LightboardApp ->> GUI: update_label("EN ATTENTE", "black")
+    LightboardApp ->> OBSRecorder: connect_with_retry()
+    OBSRecorder ->> OBSWebSocket: Connect
+    OBSWebSocket -->> OBSRecorder: Connected
+    OBSRecorder -->> LightboardApp: Connected
+    LightboardApp ->> YouTubeUploader: get_credentials()
+    YouTubeUploader ->> FileSystem: Load token file
+    FileSystem -->> YouTubeUploader: Token loaded
+    YouTubeUploader ->> GoogleAPI: Initialize client
+    GoogleAPI -->> YouTubeUploader: Client initialized
+    YouTubeUploader -->> LightboardApp: YouTube client ready
+    LightboardApp ->> DiscordNotifier: Initialize
+    DiscordNotifier ->> DiscordAPI: Initialize client
+    DiscordAPI -->> DiscordNotifier: Client initialized
+    DiscordNotifier -->> LightboardApp: Discord notifier ready
+    LightboardApp ->> Keyboard: on_press(event)
+
+    Note right of User: Début de l'enregistrement
+
+    Keyboard ->> LightboardApp: Key "start" pressed
+    LightboardApp ->> LightboardApp: process_events()
+    LightboardApp ->> GUI: update_label("EN COURS", "green")
+    LightboardApp ->> OBSRecorder: start_recording()
     OBSRecorder ->> OBSWebSocket: StartRecord
-    RecordingApp ->> GUI: update_status("EN COURS")
+    OBSWebSocket -->> OBSRecorder: Recording started
+    OBSRecorder -->> LightboardApp: Recording started
 
     Note right of User: Fin de l'enregistrement
 
-    User ->> RecordingApp: stop_recording()
-    RecordingApp ->> OBSRecorder: stop_recording()
+    Keyboard ->> LightboardApp: Key "stop" pressed
+    LightboardApp ->> LightboardApp: process_events()
+    LightboardApp ->> OBSRecorder: stop_recording()
     OBSRecorder ->> OBSWebSocket: StopRecord
-    RecordingApp ->> GUI: update_status("TERMINÉ")
-    RecordingApp ->> OBSRecorder: find_latest_video()
+    OBSWebSocket -->> OBSRecorder: Recording stopped
+    OBSRecorder -->> LightboardApp: Recording stopped
+    LightboardApp ->> GUI: update_label("TERMINÉ", "red")
+    LightboardApp ->> OBSRecorder: find_latest_video()
     OBSRecorder ->> FileSystem: Get latest video file path
     FileSystem -->> OBSRecorder: Latest video file path
-    OBSRecorder -->> RecordingApp: latest_video
-    RecordingApp ->> YouTubeUploader: upload_video(latest_video)
+    OBSRecorder -->> LightboardApp: latest_video
+    LightboardApp ->> YouTubeUploader: upload_video(latest_video)
     YouTubeUploader ->> GoogleAPI: Upload video
     GoogleAPI -->> YouTubeUploader: video_url
-    YouTubeUploader -->> RecordingApp: video_url
-    RecordingApp ->> DiscordNotifier: send_discord_message(video_url)
+    YouTubeUploader -->> LightboardApp: video_id
+    LightboardApp ->> DiscordNotifier: notify(video_id)
     DiscordNotifier ->> DiscordAPI: send_message(video_url)
     DiscordAPI -->> DiscordNotifier: Confirmation
-    DiscordNotifier -->> RecordingApp: Confirmation
+    DiscordNotifier -->> LightboardApp: Confirmation
+    LightboardApp ->> GUI: update_label("Video uploaded", "blue")
 
-    Note right of RecordingApp: Fin du processus
+    Note right of LightboardApp: Fin du processus
 ```
 
 
