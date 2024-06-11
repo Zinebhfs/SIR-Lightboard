@@ -16,14 +16,13 @@ from tkinter import Tk, Label
 import nest_asyncio
 import threading
 import queue
-from keyboard import KeyboardEvent
 import time
+from keyboard import KeyboardEvent
+
 nest_asyncio.apply()
 
 # Load environment variables from .env file
 load_dotenv()
-
-import logging
 
 class Logger:
     """
@@ -69,7 +68,6 @@ class Logger:
         """
         return self.logger
 
-
 class OBSRecorder:
     """
     A class to manage OBS recording operations.
@@ -93,6 +91,8 @@ class OBSRecorder:
         self.port: int = int(os.getenv("OBS_PORT", 4455))
         self.video_path: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
         self.client = obsws(self.host, self.port)
+        self.recording_state = 0  # 0: not recording, 1: recording
+        self.pause_resume_counter = 0  # Compteur pour suivre les basculements pause/reprise
 
         self.connect_with_retry()
         
@@ -123,15 +123,45 @@ class OBSRecorder:
         """
         Starts the OBS recording.
         """
-        self.client.call(obs_requests.StartRecord())
-        self.logger.info("Started recording")
+        if self.recording_state == 0:
+            try:
+                self.client.call(obs_requests.StartRecord())
+                self.recording_state = 1
+                self.logger.info("Enregistrement démarré")
+            except Exception as e:
+                self.logger.error(f"Erreur lors du démarrage de l'enregistrement : {e}")
+        else:
+            self.toggle_pause_resume_recording()
 
     def stop_recording(self) -> None:
         """
         Stops the OBS recording.
         """
-        self.client.call(obs_requests.StopRecord())
-        self.logger.info("Stopped recording")
+        try:
+            self.client.call(obs_requests.StopRecord())
+            self.recording_state = 0
+            self.pause_resume_counter = 0
+            self.logger.info("Enregistrement arrêté")
+        except Exception as e:
+            self.logger.error(f"Erreur lors de l'arrêt de l'enregistrement : {e}")
+
+    def toggle_pause_resume_recording(self) -> None:
+        self.pause_resume_counter += 1
+        try:
+            if self.pause_resume_counter % 2 == 1:
+                response = self.client.call(obs_requests.PauseRecord())
+                if response.status == "ok":
+                    self.logger.info("Enregistrement mis en pause")
+                else:
+                    self.logger.error(f"Erreur lors de la mise en pause de l'enregistrement : {response.status} - {response.datain}")
+            else:
+                response = self.client.call(obs_requests.ResumeRecord())
+                if response.status == "ok":
+                    self.logger.info("Enregistrement repris")
+                else:
+                    self.logger.error(f"Erreur lors de la reprise de l'enregistrement : {response.status} - {response.datain}")
+        except Exception as e:
+            self.logger.error(f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}")
 
     def disconnect(self) -> None:
         """
@@ -153,7 +183,6 @@ class OBSRecorder:
         latest_video = max(video_files, key=os.path.getmtime)
         self.logger.info(f"Latest video found: {latest_video}")
         return latest_video
-
 
 class YouTubeUploader:
     """
@@ -223,7 +252,6 @@ class YouTubeUploader:
         self.logger.info(f"Video uploaded to YouTube: {video_id}")
         return f'https://www.youtube.com/watch?v={video_id}'
 
-
 class DiscordNotifier:
     """
     A class to manage sending notifications to a Discord channel.
@@ -278,7 +306,6 @@ class DiscordNotifier:
         asyncio.set_event_loop(loop)
         message = f"Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
         loop.run_until_complete(self.send_message(message))
-
 
 class RecordingApp:
     """
@@ -355,7 +382,10 @@ class RecordingApp:
         Starts the OBS recording and updates the status.
         """
         self.obs_recorder.start_recording()
-        self.gui_queue.put(("update_status", "EN COURS", "IN PROGRESS", "green"))
+        if self.obs_recorder.pause_resume_counter % 2 == 1:
+            self.gui_queue.put(("update_status", "PAUSE", "PAUSE", "blue"))
+        else:
+            self.gui_queue.put(("update_status", "EN COURS", "IN PROGRESS", "green"))
 
     def stop_recording(self) -> None:
         """
@@ -407,12 +437,6 @@ class RecordingApp:
         elif event.name == 'é':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
-        # elif event.name == '1':
-        #     print("Quit key pressed")
-        #     keyboard.unhook_all()
-        #     self.obs_recorder.disconnect()
-        #     self.gui_queue.put(("quit",))
-        #     exit()
 
     def run(self) -> None:
         """
@@ -423,7 +447,6 @@ class RecordingApp:
         keyboard_thread.start()
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
