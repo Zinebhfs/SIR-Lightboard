@@ -340,8 +340,6 @@ class DiscordNotifier:
                 else:
                     await channel.send(message,file=discord.File(image))
                     self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
-                await channel.send(message)
-                self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
             else:
                 self.logger.error(TXT_DISCORD_CHANNEL_ERROR)
             await client.close()
