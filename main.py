@@ -474,6 +474,14 @@ class RecordingApp:
         elif event.name == 'é':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
+        elif event.name == '&':
+            self.capture_screenshot()
+
+    def capture_screenshot(self) -> None:
+        screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
+        subprocess.run(["gnome-screenshot", "-f", screenshot_path])
+        self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
+        self.root.after(3000, lambda: self.gui_queue.put(("update_status", self.last_status_message, self.last_status_message, self.last_status_color)))
 
     def run(self) -> None:
         """
