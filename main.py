@@ -192,6 +192,8 @@ class RecordingApp:
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
+        self.last_status_message = "EN ATTENTE"  # Variable to keep track of the last status message
+        self.last_status_color = "white"  # Variable to keep track of the last status color
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         root = Tk()
