@@ -393,6 +393,7 @@ class RecordingApp:
         self.root, self.label = self.create_status_window()
         self.last_status_message = "Le dernier m"
         self.last_status_color = "blue"
+        self.keyboard_hook = keyboard.hook(self.on_key_event)
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         """
@@ -484,22 +485,17 @@ class RecordingApp:
             self.obs_recorder.disconnect()
             exit()
 
-    def on_press(self, event: KeyboardEvent) -> None:
-        """
-        Handles keyboard events to start and stop recording.
-        
-        Args:
-            event (KeyboardEvent): The keyboard event.
-        """
-        if event.name == '"' or event.name == '3':
-            self.logger.info("Record key pressed: starting recording")
-            self.start_recording()
-        elif event.name == 'é' or event.name == '2':
-            self.logger.info("Stop key pressed: stopping recording")
-            self.stop_recording()
-        elif event.name == '&' or event.name == '1':
-            self.capture_screenshot()
-        time.sleep(0.5)
+    def on_key_event(self, event):
+        if event.event_type == keyboard.KEY_UP:
+            if event.name == '"' or event.name == '3':
+                self.logger.info("Record key pressed: starting recording")
+                self.start_recording()
+            elif event.name == 'é' or event.name == '2':
+                self.logger.info("Stop key pressed: stopping recording")
+                self.stop_recording()
+            elif event.name == '&' or event.name == '1':
+                self.logger.info("Screenshot key pressed: capturing screenshot")
+                self.capture_screenshot()
 
     def capture_screenshot(self) -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
@@ -516,9 +512,6 @@ class RecordingApp:
         """
         Runs the recording application, setting up keyboard event handling and the GUI loop.
         """
-        keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
-        keyboard_thread.daemon = True
-        keyboard_thread.start()
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
 
