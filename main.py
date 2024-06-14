@@ -154,8 +154,9 @@ class YouTubeUploader:
             'status': {'privacyStatus': 'unlisted'}
         }
         media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
-        response = self.youtube.videos().insert(part='snippet,status', body=body, media_body=media).execute()
-        video_id = response['id']
+        #response = self.youtube.videos().insert(part='snippet,status', body=body, media_body=media).execute()
+        #video_id = response['id']
+        video_id = toto
         self.logger.info(f"Video uploaded to YouTube: {video_id}")
         return f'https://www.youtube.com/watch?v={video_id}'
 
@@ -273,7 +274,7 @@ class RecordingApp:
     def capture_screenshot(self) -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
-        self.gui_queue.put(("update_status", f"Screenshot saved to: {screenshot_path}", "SCREENSHOT", "green"))
+        self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
