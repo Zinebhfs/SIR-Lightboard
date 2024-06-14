@@ -320,7 +320,7 @@ class DiscordNotifier:
         self.bot_token: str = TXT_DISCORD_BOT_TOKEN
         self.logger.info(TXT_DISCORD_INIT)
 
-    async def send_message(self, message: str, image: str) -> None:
+    async def send_message(self, message: str, image: str = "") -> None:
         """
         Sends a message to the Discord channel.
         
