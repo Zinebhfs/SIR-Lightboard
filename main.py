@@ -248,7 +248,7 @@ class YouTubeUploader:
         self.token_file: str = TXT_YT_TOKEN_FILE
         self.credentials = self.get_credentials()
         self.youtube: Resource = build('youtube', 'v3', credentials=self.credentials)
-        self.logger.info(TXT_YT_CLIENT_INIT
+        self.logger.info(TXT_YT_CLIENT_INIT)
 
     def get_credentials(self):
         """
