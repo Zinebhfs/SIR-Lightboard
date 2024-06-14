@@ -17,7 +17,7 @@ import nest_asyncio
 import threading
 import queue
 import time
-from keyboard import KeyboardEvent
+import subprocess
 
 nest_asyncio.apply()
 
@@ -25,85 +25,39 @@ nest_asyncio.apply()
 load_dotenv()
 
 class Logger:
-    """
-    A custom logger class that sets up logging to both console and file.
-    
-    Attributes:
-        logger (logging.Logger): The logger instance.
-    """
     def __init__(self, name: str, log_file: str = 'lightboard.txt'):
-        """
-        Initializes the Logger with a specific name and optional log file.
-        
-        Args:
-            name (str): The name of the logger.
-            log_file (str): The file to log messages to.
-        """
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
 
-        # Create console handler for logging
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
 
-        # Create file handler for logging
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(logging.DEBUG)
 
-        # Create formatters and add them to handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         console_handler.setFormatter(formatter)
         file_handler.setFormatter(formatter)
 
-        # Add handlers to the logger
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
 
     def get_logger(self):
-        """
-        Returns the logger instance.
-        
-        Returns:
-            logging.Logger: The logger instance.
-        """
         return self.logger
 
 class OBSRecorder:
-    """
-    A class to manage OBS recording operations.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        host (str): The OBS host.
-        port (int): The OBS port.
-        video_path (str): The path to save the recorded videos.
-        client (obsws): The OBS WebSocket client.
-    """
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the OBSRecorder with a logger instance.
-        
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.host: str = os.getenv("OBS_HOST", "localhost")
         self.port: int = int(os.getenv("OBS_PORT", 4455))
         self.video_path: str = os.getenv("OBS_VIDEO_PATH", r'/home/user/Videos')
         self.client = obsws(self.host, self.port)
-        self.recording_state = 0  # 0: not recording, 1: recording
-        self.pause_resume_counter = 0  # Compteur pour suivre les basculements pause/reprise
+        self.recording_state = 0
+        self.pause_resume_counter = 0
 
         self.connect_with_retry()
         
     def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
-        """
-        Attempts to connect to the OBS WebSocket server with retries.
-        
-        Args:
-            retries (int): Number of retries before giving up.
-            delay (int): Delay between retries in seconds.
-        """
         connected = False
         for _ in range(retries):
             try:
@@ -120,9 +74,6 @@ class OBSRecorder:
         self.logger.info(f"Connected to OBS at {self.host}:{self.port}")
 
     def start_recording(self) -> None:
-        """
-        Starts the OBS recording.
-        """
         if self.recording_state == 0:
             try:
                 self.client.call(obs_requests.StartRecord())
@@ -134,9 +85,6 @@ class OBSRecorder:
             self.toggle_pause_resume_recording()
 
     def stop_recording(self) -> None:
-        """
-        Stops the OBS recording.
-        """
         try:
             self.client.call(obs_requests.StopRecord())
             self.recording_state = 0
@@ -164,47 +112,22 @@ class OBSRecorder:
             self.logger.error(f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}")
 
     def disconnect(self) -> None:
-        """
-        Disconnects the OBS WebSocket client.
-        """
         self.client.disconnect()
         self.logger.info("Disconnected from OBS")
 
     def find_latest_video(self) -> Optional[str]:
-        """
-        Finds the latest recorded video file.
-        
-        Returns:
-            Optional[str]: The path to the latest video file, or None if no files are found.
-        """
         video_files = glob.glob(os.path.join(self.video_path, '*.mkv'))
         if not video_files:
             return None
         latest_video = max(video_files, key=os.path.getmtime)
+        self.logger
         self.logger.info(f"Latest video found: {latest_video}")
         return latest_video
 
 class YouTubeUploader:
-    """
-    A class to manage video uploads to YouTube.
-
-    Attributes:
-        SCOPES (list): The scopes required for the YouTube API.
-        logger (logging.Logger): The logger instance.
-        client_secrets_file (str): The path to the client secrets file.
-        token_file (str): The path to the token file.
-        credentials: The credentials for the YouTube API.
-        youtube (Resource): The YouTube API client.
-    """
     SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the YouTubeUploader with a logger instance.
-        
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.client_secrets_file: str = os.getenv("CLIENT_SECRETS_FILE", 'client_secret.json')
         self.token_file: str = os.getenv("TOKEN_FILE", 'token.pkl')
@@ -213,12 +136,6 @@ class YouTubeUploader:
         self.logger.info("YouTube client initialized")
 
     def get_credentials(self):
-        """
-        Retrieves the credentials for the YouTube API, loading them from a file or creating new ones if not found.
-        
-        Returns:
-            Credentials: The credentials for the YouTube API.
-        """
         try:
             with open(self.token_file, 'rb') as token:
                 self.logger.info("Loaded credentials from token file")
@@ -233,15 +150,6 @@ class YouTubeUploader:
             return credentials
 
     def upload_video(self, video_file: str) -> str:
-        """
-        Uploads a video to YouTube.
-        
-        Args:
-            video_file (str): The path to the video file to upload.
-        
-        Returns:
-            str: The URL of the uploaded video.
-        """
         body = {
             'snippet': {'title': 'Video TC INSA Lyon', 'description': '', 'tags': ['tag1', 'tag2']},
             'status': {'privacyStatus': 'unlisted'}
@@ -253,33 +161,13 @@ class YouTubeUploader:
         return f'https://www.youtube.com/watch?v={video_id}'
 
 class DiscordNotifier:
-    """
-    A class to manage sending notifications to a Discord channel.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        channel_id (int): The Discord channel ID.
-        bot_token (str): The Discord bot token.
-    """
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the DiscordNotifier with a logger instance.
-        
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.channel_id: int = int(os.getenv("DISCORD_CHANNEL_ID", "1242449552850681958"))
         self.bot_token: str = os.getenv("DISCORD_BOT_TOKEN", "")
         self.logger.info("Discord notifier initialized")
 
     async def send_message(self, message: str) -> None:
-        """
-        Sends a message to the Discord channel.
-        
-        Args:
-            message (str): The message to send.
-        """
         intents = discord.Intents.default()
         client = discord.Client(intents=intents)
 
@@ -296,37 +184,13 @@ class DiscordNotifier:
         await client.start(self.bot_token)
 
     def send_discord_message(self, url: str) -> None:
-        """
-        Initiates the sending of a message to the Discord channel with the video URL.
-        
-        Args:
-            url (str): The URL of the uploaded video.
-        """
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         message = f"Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
         loop.run_until_complete(self.send_message(message))
 
 class RecordingApp:
-    """
-    A class to manage the recording, uploading, and notification process.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        obs_recorder (OBSRecorder): The OBS recorder instance.
-        youtube_uploader (YouTubeUploader): The YouTube uploader instance.
-        discord_notifier (DiscordNotifier): The Discord notifier instance.
-        gui_queue (queue.Queue): The GUI queue for status updates.
-        root (Tk): The Tkinter root window.
-        label (Label): The Tkinter label for status updates.
-    """
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the RecordingApp with a logger instance.
-        
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.obs_recorder = OBSRecorder(logger)
         self.youtube_uploader = YouTubeUploader(logger)
@@ -335,38 +199,21 @@ class RecordingApp:
         self.root, self.label = self.create_status_window()
 
     def create_status_window(self) -> Tuple[Tk, Label]:
-        """
-        Creates the status window for the GUI.
-        
-        Returns:
-            Tuple[Tk, Label]: The Tkinter root window and label for status updates.
-        """
         root = Tk()
         root.geometry("400x100")
         root.overrideredirect(True)
-        root.configure(background='white')  # Set the background color to white
+        root.configure(background='white')
         root.geometry(f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}")
-        label = Label(root, text="EN ATTENTE", font=("Multicolore", 45), bg='white')  # Set widget background color to white
+        label = Label(root, text="EN ATTENTE", font=("Multicolore", 45), bg='white')
         label.pack()
         return root, label
     
     def update_status(self, message: str, status: str, color: str) -> None:
-        """
-        Updates the status message in the GUI.
-        
-        Args:
-            message (str): The status message.
-            status (str): The status indicator.
-            color (str): The color of the status message.
-        """
         self.label.config(text=message, fg=color)
         self.root.update()
         self.logger.info(f"Status updated: {message}")
 
     def process_gui_queue(self) -> None:
-        """
-        Processes the GUI queue for status updates.
-        """
         while not self.gui_queue.empty():
             task = self.gui_queue.get()
             if task[0] == "update_status":
@@ -378,9 +225,6 @@ class RecordingApp:
         self.root.after(100, self.process_gui_queue)
 
     def start_recording(self) -> None:
-        """
-        Starts the OBS recording and updates the status.
-        """
         self.obs_recorder.start_recording()
         if self.obs_recorder.pause_resume_counter % 2 == 1:
             self.gui_queue.put(("update_status", "PAUSE", "PAUSE", "blue"))
@@ -388,24 +232,17 @@ class RecordingApp:
             self.gui_queue.put(("update_status", "EN COURS", "IN PROGRESS", "green"))
 
     def stop_recording(self) -> None:
-        """
-        Stops the OBS recording, updates the status, and initiates video upload.
-        """
         self.obs_recorder.stop_recording()
         self.gui_queue.put(("update_status", "TERMINÉ", "COMPLETED", "red"))
         self.gui_queue.put(("upload_video",))
 
     def upload_video(self) -> None:
-        """
-        Uploads the latest recorded video to YouTube and sends a notification to Discord.
-        """
         try:
             video_file = self.obs_recorder.find_latest_video()
             if not video_file:
                 self.logger.error("No video file found for upload")
                 return
 
-            # Wait for obs to render all the video before uploading
             time.sleep(5)
             
             video_url = self.youtube_uploader.upload_video(video_file)
@@ -424,24 +261,31 @@ class RecordingApp:
             self.obs_recorder.disconnect()
             exit()
 
-    def on_press(self, event: KeyboardEvent) -> None:
-        """
-        Handles keyboard events to start and stop recording.
-        
-        Args:
-            event (KeyboardEvent): The keyboard event.
-        """
+    def on_press(self, event: keyboard.KeyboardEvent) -> None:
         if event.name == '"':
             self.logger.info("Record key pressed: starting recording")
             self.start_recording()
         elif event.name == 'é':
             self.logger.info("Stop key pressed: stopping recording")
             self.stop_recording()
+        elif event.name == '&':
+            self.capture_screenshot()
+
+    def capture_screenshot(self) -> None:
+        screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
+        subprocess.run(["gnome-screenshot", "-f", screenshot_path])
+        self.display_screenshot_notification(screenshot_path)
+
+    def display_screenshot_notification(self, screenshot_path: str) -> None:
+        screenshot_notification = Tk()
+        screenshot_notification.title("Screenshot Taken")
+        screenshot_notification.geometry("400x100")
+        label = Label(screenshot_notification, text=f"Screenshot saved to: {screenshot_path}", font=("Arial", 12))
+        label.pack(pady=20)
+        screenshot_notification.after(3000, screenshot_notification.destroy)
+        screenshot_notification.mainloop()
 
     def run(self) -> None:
-        """
-        Runs the recording application, setting up keyboard event handling and the GUI loop.
-        """
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
         keyboard_thread.daemon = True
         keyboard_thread.start()
