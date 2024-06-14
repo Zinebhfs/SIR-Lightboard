@@ -357,7 +357,7 @@ class DiscordNotifier:
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.send_message(TXT_DISCORD_MSG_TEMPLATE.format(url=url)))
 
-    def send_discord_image(self, path: str) -> None:
+    def send_discord_image(self, path: str, message: str) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         message = f"Capture d'ecran de la vidéo en cours"
@@ -484,7 +484,7 @@ class RecordingApp:
             exit()
 
     def on_key_event(self, event):
-        if event.event_type == keyboard.KEY_UP:
+        if event.event_type == keyboard.KEY_DOWN:
             if event.name == '"' or event.name == '3':
                 self.logger.info("Record key pressed: starting recording")
                 self.start_recording()
@@ -495,7 +495,7 @@ class RecordingApp:
                 self.logger.info("Screenshot key pressed: capturing screenshot")
                 self.capture_screenshot()
 
-    def capture_screenshot(self) -> None:
+    def capture_screenshot(self, message: str = "") -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
@@ -504,7 +504,7 @@ class RecordingApp:
         if not image_file:
             self.logger.error("No image file found for upload")
             return
-        self.discord_notifier.send_discord_image(image_file)
+        self.discord_notifier.send_discord_image(image_file, message)
 
     def run(self) -> None:
         """
