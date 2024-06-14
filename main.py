@@ -120,7 +120,6 @@ class OBSRecorder:
         if not video_files:
             return None
         latest_video = max(video_files, key=os.path.getmtime)
-        self.logger
         self.logger.info(f"Latest video found: {latest_video}")
         return latest_video
 
@@ -274,16 +273,7 @@ class RecordingApp:
     def capture_screenshot(self) -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
-        self.display_screenshot_notification(screenshot_path)
-
-    def display_screenshot_notification(self, screenshot_path: str) -> None:
-        screenshot_notification = Tk()
-        screenshot_notification.title("Screenshot Taken")
-        screenshot_notification.geometry("400x100")
-        label = Label(screenshot_notification, text=f"Screenshot saved to: {screenshot_path}", font=("Arial", 12))
-        label.pack(pady=20)
-        screenshot_notification.after(3000, screenshot_notification.destroy)
-        screenshot_notification.mainloop()
+        self.gui_queue.put(("update_status", f"Screenshot saved to: {screenshot_path}", "SCREENSHOT", "green"))
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
