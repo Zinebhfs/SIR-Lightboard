@@ -371,6 +371,8 @@ class RecordingApp:
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
+        self.last_status_message = "Le dernier m"
+        self.last_status_color = "blue"
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         """
