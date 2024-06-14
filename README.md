@@ -59,6 +59,46 @@ DISCORD_CHANNEL_ID="your_discord_channel_id_here"
 
 - Ensure OBS Studio is running and configured correctly before executing the script if you are not using the custom live-cd.
 - Handle Google API credentials and Discord bot token securely to prevent unauthorized access.
+### Flow chart of utilisation
+```mermaid
+flowchart TB
+    classDef black fill:white,color:black;
+    classDef green fill:white,color:green;
+    classDef red fill:white,color:red;
+    classDef blue fill:white,color:blue;
+
+    En_attente([En attente])
+    En_cours((En cours))
+    Pause
+    Enregistrement
+    Screenshot
+
+    En_attente:::black
+    En_cours:::green
+    Pause:::blue
+    Enregistrement:::red
+    Screenshot:::green
+
+    En_attente --> |"Appuyer sur ⏯️"| En_cours
+    En_cours --> |"Appuyer sur ⏯️"| Pause
+    Pause --> |"Appuyer sur ⏯️"| En_cours
+
+    Pause --> |"Appuyer sur 🟥"| Enregistrement
+    En_cours --> |"Appuyer sur 🟥"| Enregistrement
+
+    En_attente --> |"Appuyer sur 📷"| Screenshot
+    En_cours --> |"Appuyer sur 📷"| Screenshot
+    Pause --> |"Appuyer sur 📷"| Screenshot
+    Enregistrement --> |"Appuyer sur 📷"| Screenshot
+
+    %% Adding note about returning to the previous state after 3 seconds
+    classDef note fill:none,stroke:none;
+    note[Note: Dans l'état Screenshot, on retourne toujours à l'état précédent après 3 secondes]:::note
+    Screenshot -.-> note
+
+    %% Adding transition from Enregistrement to En_attente after 3 seconds
+    Enregistrement -. "Après 3 sec" .-> En_attente
+```
 
 ### Sequence diagram
 Sequence diagram of the main workflow of the script.
