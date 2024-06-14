@@ -118,6 +118,14 @@ class OBSRecorder:
         self.logger.info(f"Latest video found: {latest_video}")
         return latest_video
 
+    def find_latest_image(self) -> Optional[str]:
+        image_files = glob.glob(os.path.join(self.video_path, '*.png'))
+        if not image_files:
+            return None
+        latest_image = max(image_files, key=os.path.getmtime)
+        self.logger.info(f"Latest image found: {latest_image}")
+        return latest_image
+
 class YouTubeUploader:
     SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 
@@ -162,16 +170,21 @@ class DiscordNotifier:
         self.bot_token: str = os.getenv("DISCORD_BOT_TOKEN", "")
         self.logger.info("Discord notifier initialized")
 
-    async def send_message(self, message: str) -> None:
+    async def send_message(self, message: str, image: str) -> None:
         intents = discord.Intents.default()
+        intents.messages = True
         client = discord.Client(intents=intents)
 
         @client.event
         async def on_ready() -> None:
             channel = client.get_channel(self.channel_id)
             if channel:
-                await channel.send(message)
-                self.logger.info(f"Message sent to Discord channel {self.channel_id}")
+                if not image:
+                    await channel.send(message)
+                    self.logger.info(f"Message sent to Discord channel {self.channel_id}")
+                else:
+                    await channel.send(message,file=discord.File(image))
+                    self.logger.info(f"Message sent to Discord channel {self.channel_id}")
             else:
                 self.logger.error("The channel ID is incorrect, right-click the channel to get the ID")
             await client.close()
@@ -183,6 +196,12 @@ class DiscordNotifier:
         asyncio.set_event_loop(loop)
         message = f"Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
         loop.run_until_complete(self.send_message(message))
+
+    def send_discord_image(self, path: str) -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        message = f"Capture d'ecran de la vidéo en cours"
+        loop.run_until_complete(self.send_message(message, path))
 
 class RecordingApp:
     def __init__(self, logger: logging.Logger):
@@ -269,10 +288,15 @@ class RecordingApp:
             self.capture_screenshot()
 
     def capture_screenshot(self) -> None:
-        screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
+        screenshot_path = os.path.join(self.video_path, f"screenshot_{int(time.time())}.png")
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
         self.root.after(3000, lambda: self.gui_queue.put(("update_status", self.last_status_message, self.last_status_message, self.last_status_color)))
+        image_file = self.obs_recorder.find_latest_image()
+        if not image_file:
+            self.logger.error("No image file found for upload")
+            return
+        self.discord_notifier.send_discord_image(image_file)
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
