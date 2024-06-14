@@ -18,6 +18,7 @@ import threading
 import queue
 import time
 from keyboard import KeyboardEvent
+import subprocess
 
 # Load environment variables from .env file
 load_dotenv()
@@ -479,8 +480,8 @@ class RecordingApp:
 
     def capture_screenshot(self) -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
-        subprocess.run(["gnome-screenshot", "-f", screenshot_path])
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
+        subprocess.run(["gnome-screenshot", "-f", screenshot_path])
         self.root.after(3000, lambda: self.gui_queue.put(("update_status", self.last_status_message, self.last_status_message, self.last_status_color)))
 
     def run(self) -> None:
