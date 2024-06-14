@@ -225,6 +225,14 @@ class OBSRecorder:
         self.logger.info(TXT_OBS_LATEST_VIDEO.format(video=latest_video))
         return latest_video
 
+    def find_latest_image(self) -> Optional[str]:
+        image_files = glob.glob(os.path.join(self.video_path, '*.png'))
+        if not image_files:
+            return None
+        latest_image = max(image_files, key=os.path.getmtime)
+        self.logger.info(f"Latest image found: {latest_image}")
+        return latest_image
+
 class YouTubeUploader:
     """
     A class to manage video uploads to YouTube.
@@ -312,7 +320,7 @@ class DiscordNotifier:
         self.bot_token: str = TXT_DISCORD_BOT_TOKEN
         self.logger.info(TXT_DISCORD_INIT)
 
-    async def send_message(self, message: str) -> None:
+    async def send_message(self, message: str, image: str) -> None:
         """
         Sends a message to the Discord channel.
         
@@ -320,12 +328,19 @@ class DiscordNotifier:
             message (str): The message to send.
         """
         intents = discord.Intents.default()
+        intents.messages = True
         client = discord.Client(intents=intents)
 
         @client.event
         async def on_ready() -> None:
             channel = client.get_channel(self.channel_id)
             if channel:
+                if not image:
+                    await channel.send(message)
+                    self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
+                else:
+                    await channel.send(message,file=discord.File(image))
+                    self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
                 await channel.send(message)
                 self.logger.info(TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id))
             else:
@@ -344,6 +359,12 @@ class DiscordNotifier:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.send_message(TXT_DISCORD_MSG_TEMPLATE.format(url=url)))
+
+    def send_discord_image(self, path: str) -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        message = f"Capture d'ecran de la vidéo en cours"
+        loop.run_until_complete(self.send_message(message, path))
 
 class RecordingApp:
     """
@@ -485,6 +506,11 @@ class RecordingApp:
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
         self.root.after(3000, lambda: self.gui_queue.put(("update_status", self.last_status_message, self.last_status_message, self.last_status_color)))
+        image_file = self.obs_recorder.find_latest_image()
+        if not image_file:
+            self.logger.error("No image file found for upload")
+            return
+        self.discord_notifier.send_discord_image(image_file)
 
     def run(self) -> None:
         """
