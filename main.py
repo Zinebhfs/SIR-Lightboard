@@ -98,16 +98,10 @@ class OBSRecorder:
         try:
             if self.pause_resume_counter % 2 == 1:
                 response = self.client.call(obs_requests.PauseRecord())
-                if response.status == "ok":
-                    self.logger.info("Enregistrement mis en pause")
-                else:
-                    self.logger.error(f"Erreur lors de la mise en pause de l'enregistrement : {response.status} - {response.datain}")
+                self.logger.info("Enregistrement mis en pause")
             else:
                 response = self.client.call(obs_requests.ResumeRecord())
-                if response.status == "ok":
-                    self.logger.info("Enregistrement repris")
-                else:
-                    self.logger.error(f"Erreur lors de la reprise de l'enregistrement : {response.status} - {response.datain}")
+                self.logger.info("Enregistrement repris")
         except Exception as e:
             self.logger.error(f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}")
 
@@ -275,6 +269,7 @@ class RecordingApp:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
         subprocess.run(["gnome-screenshot", "-f", screenshot_path])
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
+        self.root.after(3000, self.restore_previous_status)
 
     def run(self) -> None:
         keyboard_thread = threading.Thread(target=lambda: keyboard.on_press(self.on_press))
