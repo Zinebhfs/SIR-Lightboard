@@ -500,6 +500,7 @@ class RecordingApp:
             self.stop_recording()
         elif event.name == '&' or event.name == '1':
             self.capture_screenshot()
+        time.sleep(0.5)
 
     def capture_screenshot(self) -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
