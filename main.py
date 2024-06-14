@@ -328,7 +328,6 @@ class DiscordNotifier:
             message (str): The message to send.
         """
         intents = discord.Intents.default()
-        intents.messages = True
         client = discord.Client(intents=intents)
 
         @client.event
