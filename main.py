@@ -360,7 +360,6 @@ class DiscordNotifier:
     def send_discord_image(self, path: str, message: str) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        message = f"Capture d'ecran de la vidéo en cours"
         loop.run_until_complete(self.send_message(message, path))
 
 class RecordingApp:
@@ -392,6 +391,7 @@ class RecordingApp:
         self.last_status_message = "Le dernier m"
         self.last_status_color = "blue"
         self.keyboard_hook = keyboard.hook(self.on_key_event)
+        self.capture_screenshot(message="Etat du tableau au démarrage de la solution lightboard TC")
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         """
@@ -453,6 +453,9 @@ class RecordingApp:
         self.obs_recorder.stop_recording()
         self.gui_queue.put(("update_status", TXT_GUI_COMPLETED, "COMPLETED", "red"))
         self.gui_queue.put(("upload_video",))
+        time.sleep(1)
+        self.capture_screenshot(message="Etat du tableau à la fin du recording")
+
 
     def upload_video(self) -> None:
         """
@@ -493,8 +496,8 @@ class RecordingApp:
                 self.stop_recording()
             elif event.name == '&' or event.name == '1':
                 self.logger.info("Screenshot key pressed: capturing screenshot")
-                self.capture_screenshot()
-
+                self.capture_screenshot(message="Capture d'ecran de la vidéo en cours")
+                
     def capture_screenshot(self, message: str = "") -> None:
         screenshot_path = os.path.join(self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png")
         self.gui_queue.put(("update_status","SCREENSHOT", "SCREENSHOT", "green"))
