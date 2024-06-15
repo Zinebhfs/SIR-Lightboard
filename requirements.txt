@@ -20,3 +20,5 @@ obs-websocket-py==1.0
 ndg-httpsclient
 pyopenssl
 pyasn1
+# Screenshot for windows
+pyautogui
