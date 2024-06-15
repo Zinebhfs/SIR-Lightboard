@@ -66,9 +66,9 @@ TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
 TXT_GUI_ERROR = "ERROR"
 TXT_GUI_PAUSE = "PAUSE"
+TXT_GUI_TIMER = "00:00"
 TXT_GUI_GOOGLE_QUOTA_ERROR = "Google quota exceeded"
 TXT_GUI_UNEXPECTED_ERROR = "An unexpected error occurred"
-
 
 nest_asyncio.apply()
 
@@ -442,8 +442,13 @@ class RecordingApp:
         self.previous_status_message = self.last_status_message
         self.previous_status_color = self.last_status_color
         self.capture_screenshot(
-            message="Etat du tableau au démarrage de la solution lightboard TC"
+            message="État du tableau au démarrage de la solution lightboard TC"
         )
+
+        self.is_paused = False
+        self.elapsed_time = 0
+        self.start_time = None
+        self.paused_time = 0
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         """
@@ -493,6 +498,16 @@ class RecordingApp:
                 self.upload_video()
             elif task[0] == "quit":
                 self.root.quit()
+            elif task[0] == "pause_timer":
+                self.pause_timer()
+            elif task[0] == "resume_timer":
+                self.resume_timer()
+            elif task[0] == "start_timer":
+                self.start_timer()
+            elif task[0] == "stop_timer":
+                self.stop_timer()
+            elif task[0] == "reset_timer":
+                self.reset_timer()
         self.root.after(100, self.process_gui_queue)
 
     def start_recording(self) -> None:
@@ -502,10 +517,16 @@ class RecordingApp:
         self.obs_recorder.start_recording()
         if self.obs_recorder.pause_resume_counter % 2 == 1:
             self.gui_queue.put(("update_status", TXT_GUI_PAUSE, "PAUSE", "blue"))
+            self.gui_queue.put(("pause_timer",))
         else:
             self.gui_queue.put(
-                ("update_status", TXT_GUI_IN_PROGRESS, "IN PROGRESS", "green")
+                ("update_status", TXT_GUI_TIMER, "IN PROGRESS", "green")
             )
+            if self.is_paused:
+                self.gui_queue.put(("resume_timer",))
+            else:
+                self.gui_queue.put(("start_timer",))
+
 
     def stop_recording(self) -> None:
         """
@@ -513,6 +534,8 @@ class RecordingApp:
         """
         self.obs_recorder.stop_recording()
         self.gui_queue.put(("update_status", TXT_GUI_COMPLETED, "COMPLETED", "red"))
+        self.gui_queue.put(("stop_timer",))
+        self.gui_queue.put(("reset_timer",))
         self.gui_queue.put(("upload_video",))
         time.sleep(1)
         self.capture_screenshot(message="Etat du tableau à la fin du recording")
@@ -603,6 +626,46 @@ class RecordingApp:
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
 
+    def start_timer(self) -> None:
+        if self.is_paused:
+            self.start_time = time.time() - self.paused_time  # Reprendre à partir du temps où il a été mis en pause
+        else:
+            if self.start_time is None:
+                self.start_time = time.time()
+        self.running = True
+        self.update_timer()
+
+    def stop_timer(self) -> None:
+        self.running = False
+
+    def reset_timer(self) -> None:
+        self.elapsed_time = 0
+        self.start_time = None
+        self.paused_time = 0
+
+    def toggle_pause(self) -> None:
+        self.is_paused = not self.is_paused
+
+    def pause_timer(self) -> None:
+        if self.running and not self.is_paused:
+            self.elapsed_time = time.time() - self.start_time
+            self.paused_time = self.elapsed_time  # Enregistrer le temps écoulé jusqu'à présent
+            self.running = False
+            self.is_paused = True
+
+    def resume_timer(self) -> None:
+        if not self.running:
+            self.start_timer()  # Reprendre à partir du temps où il a été mis en pause
+            self.is_paused = False
+
+    def update_timer(self) -> None:
+        if self.running:
+            self.elapsed_time = int(time.time() - self.start_time)
+            hours, remainder = divmod(self.elapsed_time, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            self.label.config(text=f"{minutes:02}:{seconds:02}")
+            self.root.update_idletasks()
+            self.root.after(1000, self.update_timer)
 
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
