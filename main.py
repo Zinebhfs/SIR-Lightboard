@@ -19,6 +19,8 @@ import queue
 import time
 from keyboard import KeyboardEvent
 import subprocess
+import platform
+import pyautogui
 
 # Load environment variables from .env file
 load_dotenv()
@@ -434,9 +436,11 @@ class RecordingApp:
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
-        self.last_status_message = "Le dernier m"
-        self.last_status_color = "blue"
+        self.last_status_message = "EN ATTENTE"
+        self.last_status_color = "black"
         self.keyboard_hook = keyboard.hook(self.on_key_event)
+        self.previous_status_message = self.last_status_message
+        self.previous_status_color = self.last_status_color
         self.capture_screenshot(
             message="Etat du tableau au démarrage de la solution lightboard TC"
         )
@@ -473,6 +477,9 @@ class RecordingApp:
         self.label.config(text=message, fg=color)
         self.root.update()
         self.logger.info(f"Status updated: {message}")
+        self.last_status_message = message
+        self.last_status_color = color
+
 
     def process_gui_queue(self) -> None:
         """
@@ -555,23 +562,38 @@ class RecordingApp:
         screenshot_path = os.path.join(
             self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
         )
+        
+        # Update GUI status
         self.gui_queue.put(("update_status", "SCREENSHOT", "SCREENSHOT", "green"))
-        subprocess.run(["gnome-screenshot", "-f", screenshot_path])
+        
+        # Capture screenshot based on the operating system
+        if platform.system() == "Linux":
+            subprocess.run(["gnome-screenshot", "-f", screenshot_path])
+        elif platform.system() == "Windows":
+            screenshot = pyautogui.screenshot()
+            screenshot.save(screenshot_path)
+        else:
+            raise NotImplementedError("Unsupported OS")
+        
+        # Restore previous status after 3 seconds
         self.root.after(
             3000,
             lambda: self.gui_queue.put(
                 (
                     "update_status",
-                    self.last_status_message,
-                    self.last_status_message,
-                    self.last_status_color,
+                    self.previous_status_message,
+                    self.previous_status_message,
+                    self.previous_status_color,
                 )
             ),
         )
+        
+        # Find the latest image and upload it
         image_file = self.obs_recorder.find_latest_image()
         if not image_file:
             self.logger.error("No image file found for upload")
             return
+        
         self.discord_notifier.send_discord_image(image_file, message)
 
     def run(self) -> None:
