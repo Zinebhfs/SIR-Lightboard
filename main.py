@@ -212,20 +212,10 @@ class OBSRecorder:
         try:
             if self.pause_resume_counter % 2 == 1:
                 response = self.client.call(obs_requests.PauseRecord())
-                if response.status == "ok":
-                    self.logger.info(TXT_LOGGER_PAUSE_RECORD)
-                else:
-                    self.logger.error(
-                        f"Erreur lors de la mise en pause de l'enregistrement : {response.status} - {response.datain}"
-                    )
+                self.logger.info(TXT_LOGGER_PAUSE_RECORD)
             else:
                 response = self.client.call(obs_requests.ResumeRecord())
-                if response.status == "ok":
-                    self.logger.info(TXT_LOGGER_RESUME_RECORD)
-                else:
-                    self.logger.error(
-                        f"Erreur lors de la reprise de l'enregistrement : {response.status} - {response.datain}"
-                    )
+                self.logger.info(TXT_LOGGER_RESUME_RECORD)
         except Exception as e:
             self.logger.error(
                 f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}"
