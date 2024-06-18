@@ -19,6 +19,7 @@ import time
 import subprocess
 import platform
 import pyautogui
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,13 +52,9 @@ TXT_YT_CLIENT_INIT = "YouTube client initialized"
 TXT_YT_CREDENTIALS_LOADED = "Loaded credentials from token file"
 TXT_YT_TOKEN_NOT_FOUND = "Token file not found, creating new credentials"
 TXT_YT_CREDENTIALS_SAVED = "New credentials saved to token file"
-TXT_DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", "1242449552850681958"))
-TXT_DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
+DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/1252605827253272616/D9DPkbrOFggltV9WbymxWZZcO2v_N9oyM9PmnIT-3-prJ94wXwu7ARI6E03KsX2laAoZ"
 TXT_DISCORD_INIT = "Discord notifier initialized"
-TXT_DISCORD_MSG_SENT = "Message sent to Discord channel {channel_id}"
-TXT_DISCORD_CHANNEL_ERROR = (
-    "The channel ID is incorrect, right-click the channel to get the ID"
-)
+TXT_DISCORD_MSG_SENT = "Message sent to Discord channel via webhook"
 TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
 TXT_GUI_WAITING = "EN ATTENTE"
 TXT_GUI_IN_PROGRESS = "EN COURS"
@@ -234,45 +231,26 @@ class YouTubeUploader:
 class DiscordNotifier:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
-        self.channel_id: int = int(TXT_DISCORD_CHANNEL_ID)
-        self.bot_token: str = TXT_DISCORD_BOT_TOKEN
+        self.webhook_url: str = TXT_DISCORD_WEBHOOK_URL
         self.logger.info(TXT_DISCORD_INIT)
 
-    async def send_message(self, message: str, image: str = "") -> None:
-        intents = discord.Intents.default()
-        client = discord.Client(intents=intents)
-
-        @client.event
-        async def on_ready() -> None:
-            channel = client.get_channel(self.channel_id)
-            if channel:
-                if not image:
-                    await channel.send(message)
-                    self.logger.info(
-                        TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id)
-                    )
-                else:
-                    await channel.send(message, file=discord.File(image))
-                    self.logger.info(
-                        TXT_DISCORD_MSG_SENT.format(channel_id=self.channel_id)
-                    )
-            else:
-                self.logger.error(TXT_DISCORD_CHANNEL_ERROR)
-            await client.close()
-
-        await client.start(self.bot_token)
-
     def send_discord_message(self, url: str) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            self.send_message(TXT_DISCORD_MSG_TEMPLATE.format(url=url))
-        )
+        message = {"content": TXT_DISCORD_MSG_TEMPLATE.format(url=url)}
+        response = requests.post(self.webhook_url, json=message)
+        if response.status_code == 204:
+            self.logger.info(TXT_DISCORD_MSG_SENT)
+        else:
+            self.logger.error(f"Failed to send message: {response.status_code}")
 
     def send_discord_image(self, path: str, message: str) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.send_message(message, path))
+        with open(path, "rb") as file:
+            response = requests.post(
+                self.webhook_url, files={"file": file}, data={"content": message}
+            )
+            if response.status_code == 204:
+                self.logger.info(TXT_DISCORD_MSG_SENT)
+            else:
+                self.logger.error(f"Failed to send image: {response.status_code}")
 
 
 class RecordingApp:
