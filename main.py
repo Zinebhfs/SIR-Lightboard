@@ -62,6 +62,7 @@ TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible grâce à l'URL suivant 
 TXT_GUI_WAITING = "EN ATTENTE"
 TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
+TXT_GUI_FINISH_RECORDING = "ENREGISTREMENT"
 TXT_GUI_ERROR = "ERROR"
 TXT_GUI_PAUSE = "PAUSE"
 TXT_GUI_TIMER = "00:00"
@@ -100,11 +101,16 @@ class OBSRecorder:
         self.port: int = TXT_OBS_PORT
         self.video_path: str = TXT_OBS_VIDEO_PATH
         self.client = obsws(self.host, self.port)
-        self.recording_state = 0
+        # self.recording_state = 0
         self.pause_resume_counter = 0
 
         self.connect_with_retry()
 
+    def get_video_status(self) -> str:
+        response = self.client.call(obs_requests.GetRecordStatus())
+        print(response)
+        return response
+    
     def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
         connected = False
         for _ in range(retries):
@@ -130,39 +136,49 @@ class OBSRecorder:
         self.logger.info(TXT_OBS_CONNECTED.format(host=self.host, port=self.port))
 
     def start_recording(self) -> None:
-        if self.recording_state == 0:
-            try:
-                self.client.call(obs_requests.StartRecord())
-                self.recording_state = 1
-                self.logger.info(TXT_OBS_START_RECORD)
-            except Exception as e:
-                self.logger.error(f"Erreur lors du démarrage de l'enregistrement : {e}")
-        else:
-            self.toggle_pause_resume_recording()
+        try:
+            self.client.call(obs_requests.StartRecord())
+            self.logger.info(TXT_OBS_START_RECORD)
+        except Exception as e:
+            self.logger.error(f"Erreur lors du démarrage de l'enregistrement : {e}")
 
     def stop_recording(self) -> None:
         try:
             self.client.call(obs_requests.StopRecord())
-            self.recording_state = 0
+            # self.recording_state = 0
             self.pause_resume_counter = 0
             self.logger.info(TXT_OBS_STOP_RECORD)
         except Exception as e:
             self.logger.error(f"Erreur lors de l'arrêt de l'enregistrement : {e}")
 
-    def toggle_pause_resume_recording(self) -> None:
-        self.pause_resume_counter += 1
+    def pause_recording(self) -> None:
         try:
-            if self.pause_resume_counter % 2 == 1:
-                response = self.client.call(obs_requests.PauseRecord())
-                self.logger.info(TXT_LOGGER_PAUSE_RECORD)
-                self.capture_screenshot()  # Todo: Fix this
-            else:
-                response = self.client.call(obs_requests.ResumeRecord())
-                self.logger.info(TXT_LOGGER_RESUME_RECORD)
+            self.client.call(obs_requests.PauseRecord())
+            self.logger.info(TXT_LOGGER_PAUSE_RECORD)
         except Exception as e:
-            self.logger.error(
-                f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}"
-            )
+            self.logger.error(f"Erreur lors de la pause de l'enregistrement : {e}")
+
+    def resume_recording(self) -> None:
+        try:
+            self.client.call(obs_requests.ResumeRecord())
+            self.logger.info(TXT_LOGGER_RESUME_RECORD)
+        except Exception as e:
+            self.logger.error(f"Erreur lors de la reprise de l'enregistrement : {e}")
+
+    # def toggle_pause_resume_recording(self) -> None:
+    #     self.pause_resume_counter += 1
+    #     try:
+    #         if self.pause_resume_counter % 2 == 1:
+    #             response = self.client.call(obs_requests.PauseRecord())
+    #             self.logger.info(TXT_LOGGER_PAUSE_RECORD)
+    #             self.capture_screenshot()  # Todo: Fix this
+    #         else:
+    #             response = self.client.call(obs_requests.ResumeRecord())
+    #             self.logger.info(TXT_LOGGER_RESUME_RECORD)
+    #     except Exception as e:
+    #         self.logger.error(
+    #             f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}"
+    #         )
 
     def disconnect(self) -> None:
         self.client.disconnect()
@@ -287,15 +303,26 @@ class RecordingApp:
         self.keyboard_hook = keyboard.hook(self.on_key_event)
         self.previous_status_message = self.last_status_message
         self.previous_status_color = self.last_status_color
+        self.previous_state = "EN_ATTENTE"
+        self.state = "EN_ATTENTE"  # Initialize the state
 
-        self.update_status(self.last_status_message, "", self.last_status_color)
+        self.update_gui_message(self.last_status_message, self.last_status_color)
 
-        self.is_paused = False
-        self.elapsed_time = 0
+        self.elapsed_time: int = 0
         self.start_time = None
-        self.paused_time = 0
+        self.start_paused_time = None
+        self.end_paused_time = None
+        self.paused_time: int = 0
 
         self.capture_screenshot(message="Etat du tableau au démarrage", show_gui=False)
+
+    def update_state(self, new_state: str):
+        self.logger.info(f"{self.state} -> {new_state}")
+        self.logger.info(f"{self.previous_state} -> {self.state}")
+        self.previous_state = self.state
+        self.state = new_state
+        self.logger.info(f"State updated to: {self.state}")
+        self.logger.info(f"Previous state: {self.previous_state}")
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         root = Tk()
@@ -305,13 +332,11 @@ class RecordingApp:
         root.geometry(
             f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}"
         )
-        label = Label(
-            root, text=TXT_GUI_WAITING, font=("Multicolore", 45), bg="white"
-        )
+        label = Label(root, text=TXT_GUI_WAITING, font=("Multicolore", 45), bg="white")
         label.pack()
         return root, label
 
-    def update_status(self, message: str, status: str, color: str) -> None:
+    def update_gui_message(self, message: str, color: str) -> None:
         self.previous_status_message = self.last_status_message
         self.previous_status_color = self.last_status_color
         self.last_status_message = message
@@ -321,51 +346,21 @@ class RecordingApp:
         self.logger.info(f"Status updated: {message}")
 
     def restore_previous_status(self) -> None:
-        self.update_status(self.previous_status_message, "", self.previous_status_color)
+        self.update_gui_message(
+            self.previous_status_message, self.previous_status_color
+        )
+        self.update_state(self.previous_state)
 
     def process_gui_queue(self) -> None:
         while not self.gui_queue.empty():
             task = self.gui_queue.get()
-            if task[0] == "update_status":
-                self.update_status(task[1], task[2], task[3])
+            if task[0] == "update_gui_message":
+                self.update_gui_message(task[1], task[2])
             elif task[0] == "upload_video":
                 self.upload_video()
-            elif task[0] == "quit":
-                self.root.quit()
-            elif task[0] == "pause_timer":
-                self.pause_timer()
-            elif task[0] == "resume_timer":
-                self.resume_timer()
-            elif task[0] == "start_timer":
-                self.start_timer()
-            elif task[0] == "stop_timer":
-                self.stop_timer()
-            elif task[0] == "reset_timer":
-                self.reset_timer()
+            elif task[0] == "launch_timer":
+                self.launch_timer()
         self.root.after(100, self.process_gui_queue)
-
-    def start_recording(self) -> None:
-        self.obs_recorder.start_recording()
-        if self.obs_recorder.pause_resume_counter % 2 == 1:
-            self.gui_queue.put(("update_status", TXT_GUI_PAUSE, "PAUSE", "blue"))
-            self.gui_queue.put(("pause_timer",))
-        else:
-            self.gui_queue.put(
-                ("update_status", TXT_GUI_TIMER, "IN PROGRESS", "green")
-            )
-            if self.is_paused:
-                self.gui_queue.put(("resume_timer",))
-            else:
-                self.gui_queue.put(("start_timer",))
-
-    def stop_recording(self) -> None:
-        self.obs_recorder.stop_recording()
-        self.gui_queue.put(("update_status", TXT_GUI_COMPLETED, "COMPLETED", "red"))
-        self.gui_queue.put(("stop_timer",))
-        self.gui_queue.put(("reset_timer",))
-        self.gui_queue.put(("upload_video",))
-        time.sleep(1)  # Wait for the man to clean the board
-        self.capture_screenshot(message="Etat du tableau à la fin du recording", show_gui=False)
 
     def upload_video(self) -> None:
         try:
@@ -374,35 +369,89 @@ class RecordingApp:
                 self.logger.error("No video file found for upload")
                 return
 
-            time.sleep(5)
+            time.sleep(5)  # Wait for the video to be fully written to disk
 
             video_url = self.youtube_uploader.upload_video(video_file)
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(video_url)
         except googleapiclient.errors.ResumableUploadError as e:
             self.logger.error("Google API quota exceeded. Unable to upload video.")
-            self.update_status("Google quota exceeded", "ERROR", "red")
+            self.update_gui_message("Google quota exceeded", "red")
             time.sleep(5)
             self.obs_recorder.disconnect()
             exit()
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
-            self.update_status("An unexpected error occurred", "ERROR", "red")
+            self.update_gui_message("An unexpected error occurred", "red")
             time.sleep(5)
             self.obs_recorder.disconnect()
             exit()
 
     def on_key_event(self, event: keyboard.KeyboardEvent):
         if event.event_type == keyboard.KEY_DOWN:
+            # Action : ⏯️
             if event.name == '"' or event.name == "3":
-                self.logger.info("Record key pressed: starting recording")
-                self.start_recording()
+
+                if self.state == "EN_ATTENTE":
+                    self.update_state("EN_COURS")
+                    self.start_time = time.time()
+                    self.gui_queue.put(("launch_timer",))
+
+                    self.obs_recorder.start_recording()
+                    self.obs_recorder.get_video_status()
+
+                elif self.state == "EN_COURS":
+                    self.update_state("PAUSE")
+                    self.start_paused_time = time.time()
+                    self.gui_queue.put(("launch_timer",))
+                    self.obs_recorder.pause_recording()
+                    self.obs_recorder.get_video_status()
+
+                elif self.state == "PAUSE":
+                    self.update_state("EN_COURS")
+                    self.end_paused_time = time.time()
+                    self.paused_time += int(self.end_paused_time - self.start_paused_time)
+                    self.start_paused_time = None
+                    self.end_paused_time = None
+                    self.gui_queue.put(("launch_timer",))
+                    self.obs_recorder.resume_recording()
+                    self.obs_recorder.get_video_status()
+
+            # Action : 🟥
             elif event.name == "é" or event.name == "2":
-                self.logger.info("Stop key pressed: stopping recording")
-                self.stop_recording()
+                if self.state == "PAUSE" or self.state == "EN_COURS":
+                    self.update_state("ENREGISTREMENT")
+                    self.obs_recorder.stop_recording()
+                    self.gui_queue.put(("upload_video",))
+                    self.gui_queue.put(
+                        (
+                            "update_gui_message",
+                            TXT_GUI_FINISH_RECORDING,
+                            "red",
+                        )
+                    )
+                    time.sleep(3)
+                    self.capture_screenshot(
+                        message="Etat du tableau à la fin du recording", show_gui=False
+                    )
+                    self.elapsed_time: int = 0
+                    self.start_time = None
+                    self.start_paused_time = None
+                    self.end_paused_time = None
+                    self.paused_time: int = 0
+                    self.update_state("EN_ATTENTE")
+                    self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
+
+            # Action : 📷
             elif event.name == "&" or event.name == "1":
-                self.logger.info("Screenshot key pressed: capturing screenshot")
-                self.capture_screenshot(message="Capture d'ecran de la vidéo en cours")
+                self.update_state("SCREENSHOT")
+                self.capture_screenshot(
+                    message="Capture d'ecran de la vidéo en cours", show_gui=True
+                )
+                time.sleep(3)
+                self.restore_previous_status()  # After 3 seconds, restore previous state
+                if self.state in ["EN_COURS", "PAUSE"]:
+                    self.gui_queue.put(("launch_timer",))
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
         screenshot_path = os.path.join(
@@ -411,7 +460,7 @@ class RecordingApp:
 
         # Update GUI status
         if show_gui:
-            self.gui_queue.put(("update_status", "SCREENSHOT", "SCREENSHOT", "green"))
+            self.gui_queue.put(("update_gui_message", "SCREENSHOT", "green"))
 
         # Capture screenshot based on the operating system
         if platform.system() == "Linux":
@@ -421,9 +470,6 @@ class RecordingApp:
             screenshot.save(screenshot_path)
         else:
             raise NotImplementedError("Unsupported OS")
-
-        # Restore previous status directly after capturing the screenshot
-        self.restore_previous_status()
 
         # Find the latest image and upload it
         image_file = self.obs_recorder.find_latest_image()
@@ -437,46 +483,14 @@ class RecordingApp:
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
 
-    def start_timer(self) -> None:
-        if self.is_paused:
-            self.start_time = time.time() - self.paused_time
-        else:
-            if self.start_time is None:
-                self.start_time = time.time()
-        self.running = True
-        self.update_timer()
-
-    def stop_timer(self) -> None:
-        self.running = False
-
-    def reset_timer(self) -> None:
-        self.elapsed_time = 0
-        self.start_time = None
-        self.paused_time = 0
-
-    def toggle_pause(self) -> None:
-        self.is_paused = not self.is_paused
-
-    def pause_timer(self) -> None:
-        if self.running and not self.is_paused:
-            self.elapsed_time = time.time() - self.start_time
-            self.paused_time = self.elapsed_time
-            self.running = False
-            self.is_paused = True
-
-    def resume_timer(self) -> None:
-        if not self.running:
-            self.start_timer()
-            self.is_paused = False
-
-    def update_timer(self) -> None:
-        if self.running:
-            self.elapsed_time = int(time.time() - self.start_time)
+    def launch_timer(self) -> None:
+        while self.state == "EN_COURS":
+            self.elapsed_time = int(time.time() - self.start_time) - self.paused_time
             hours, remainder = divmod(self.elapsed_time, 3600)
             minutes, seconds = divmod(remainder, 60)
-            self.label.config(text=f"{minutes:02}:{seconds:02}")
+            self.update_gui_message(f"{minutes:02d}:{seconds:02d}", "green")
             self.root.update_idletasks()
-            self.root.after(1000, self.update_timer)
+            time.sleep(1)
 
 
 if __name__ == "__main__":
