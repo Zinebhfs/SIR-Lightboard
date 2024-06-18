@@ -74,90 +74,40 @@ nest_asyncio.apply()
 
 
 class Logger:
-    """
-    A custom logger class that sets up logging to both console and file.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-    """
-
     def __init__(self, name: str, log_file: str = TXT_LOG_FILE):
-        """
-        Initializes the Logger with a specific name and optional log file.
-
-        Args:
-            name (str): The name of the logger.
-            log_file (str): The file to log messages to.
-        """
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
 
-        # Create console handler for logging
         console_handler = logging.StreamHandler()
         console_handler.setLevel(TXT_CONSOLE_HANDLER_LEVEL)
 
-        # Create file handler for logging
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(TXT_FILE_HANDLER_LEVEL)
 
-        # Create formatters and add them to handlers
         formatter = logging.Formatter(TXT_LOG_FORMAT)
         console_handler.setFormatter(formatter)
         file_handler.setFormatter(formatter)
 
-        # Add handlers to the logger
         self.logger.addHandler(console_handler)
         self.logger.addHandler(file_handler)
 
     def get_logger(self):
-        """
-        Returns the logger instance.
-
-        Returns:
-            logging.Logger: The logger instance.
-        """
         return self.logger
 
 
 class OBSRecorder:
-    """
-    A class to manage OBS recording operations.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        host (str): The OBS host.
-        port (int): The OBS port.
-        video_path (str): The path to save the recorded videos.
-        client (obsws): The OBS WebSocket client.
-    """
-
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the OBSRecorder with a logger instance.
-
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.host: str = TXT_OBS_HOST
         self.port: int = TXT_OBS_PORT
         self.video_path: str = TXT_OBS_VIDEO_PATH
         self.client = obsws(self.host, self.port)
-        self.recording_state = 0  # 0: not recording, 1: recording
-        self.pause_resume_counter = (
-            0  # Compteur pour suivre les basculements pause/reprise
-        )
+        self.recording_state = 0
+        self.pause_resume_counter = 0
 
         self.connect_with_retry()
 
     def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
-        """
-        Attempts to connect to the OBS WebSocket server with retries.
-
-        Args:
-            retries (int): Number of retries before giving up.
-            delay (int): Delay between retries in seconds.
-        """
         connected = False
         for _ in range(retries):
             try:
@@ -182,9 +132,6 @@ class OBSRecorder:
         self.logger.info(TXT_OBS_CONNECTED.format(host=self.host, port=self.port))
 
     def start_recording(self) -> None:
-        """
-        Starts the OBS recording.
-        """
         if self.recording_state == 0:
             try:
                 self.client.call(obs_requests.StartRecord())
@@ -196,9 +143,6 @@ class OBSRecorder:
             self.toggle_pause_resume_recording()
 
     def stop_recording(self) -> None:
-        """
-        Stops the OBS recording.
-        """
         try:
             self.client.call(obs_requests.StopRecord())
             self.recording_state = 0
@@ -222,19 +166,10 @@ class OBSRecorder:
             )
 
     def disconnect(self) -> None:
-        """
-        Disconnects the OBS WebSocket client.
-        """
         self.client.disconnect()
         self.logger.info(TXT_OBS_DISCONNECTED)
 
     def find_latest_video(self) -> Optional[str]:
-        """
-        Finds the latest recorded video file.
-
-        Returns:
-            Optional[str]: The path to the latest video file, or None if no files are found.
-        """
         video_files = glob.glob(os.path.join(self.video_path, "*.mkv"))
         if not video_files:
             return None
@@ -252,24 +187,7 @@ class OBSRecorder:
 
 
 class YouTubeUploader:
-    """
-    A class to manage video uploads to YouTube.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        client_secrets_file (str): The path to the client secrets file.
-        token_file (str): The path to the token file.
-        credentials: The credentials for the YouTube API.
-        youtube (Resource): The YouTube API client.
-    """
-
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the YouTubeUploader with a logger instance.
-
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.client_secrets_file: str = TXT_YT_CLIENT_SECRETS_FILE
         self.token_file: str = TXT_YT_TOKEN_FILE
@@ -278,12 +196,6 @@ class YouTubeUploader:
         self.logger.info(TXT_YT_CLIENT_INIT)
 
     def get_credentials(self):
-        """
-        Retrieves the credentials for the YouTube API, loading them from a file or creating new ones if not found.
-
-        Returns:
-            Credentials: The credentials for the YouTube API.
-        """
         try:
             with open(self.token_file, "rb") as token:
                 self.logger.info(TXT_YT_CREDENTIALS_LOADED)
@@ -300,15 +212,6 @@ class YouTubeUploader:
             return credentials
 
     def upload_video(self, video_file: str) -> str:
-        """
-        Uploads a video to YouTube.
-
-        Args:
-            video_file (str): The path to the video file to upload.
-
-        Returns:
-            str: The URL of the uploaded video.
-        """
         body = {
             "snippet": {
                 "title": "Video TC INSA Lyon",
@@ -329,34 +232,13 @@ class YouTubeUploader:
 
 
 class DiscordNotifier:
-    """
-    A class to manage sending notifications to a Discord channel.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        channel_id (int): The Discord channel ID.
-        bot_token (str): The Discord bot token.
-    """
-
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the DiscordNotifier with a logger instance.
-
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.channel_id: int = int(TXT_DISCORD_CHANNEL_ID)
         self.bot_token: str = TXT_DISCORD_BOT_TOKEN
         self.logger.info(TXT_DISCORD_INIT)
 
     async def send_message(self, message: str, image: str = "") -> None:
-        """
-        Sends a message to the Discord channel.
-
-        Args:
-            message (str): The message to send.
-        """
         intents = discord.Intents.default()
         client = discord.Client(intents=intents)
 
@@ -381,12 +263,6 @@ class DiscordNotifier:
         await client.start(self.bot_token)
 
     def send_discord_message(self, url: str) -> None:
-        """
-        Initiates the sending of a message to the Discord channel with the video URL.
-
-        Args:
-            url (str): The URL of the uploaded video.
-        """
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(
@@ -400,26 +276,7 @@ class DiscordNotifier:
 
 
 class RecordingApp:
-    """
-    A class to manage the recording, uploading, and notification process.
-
-    Attributes:
-        logger (logging.Logger): The logger instance.
-        obs_recorder (OBSRecorder): The OBS recorder instance.
-        youtube_uploader (YouTubeUploader): The YouTube uploader instance.
-        discord_notifier (DiscordNotifier): The Discord notifier instance.
-        gui_queue (queue.Queue): The GUI queue for status updates.
-        root (Tk): The Tkinter root window.
-        label (Label): The Tkinter label for status updates.
-    """
-
     def __init__(self, logger: logging.Logger):
-        """
-        Initializes the RecordingApp with a logger instance.
-
-        Args:
-            logger (logging.Logger): The logger instance.
-        """
         self.logger = logger
         self.obs_recorder = OBSRecorder(logger)
         self.youtube_uploader = YouTubeUploader(logger)
@@ -441,45 +298,32 @@ class RecordingApp:
         self.paused_time = 0
 
     def create_status_window(self) -> Tuple[Tk, Label]:
-        """
-        Creates the status window for the GUI.
-
-        Returns:
-            Tuple[Tk, Label]: The Tkinter root window and label for status updates.
-        """
         root = Tk()
         root.geometry("400x100")
         root.overrideredirect(True)
-        root.configure(background="white")  # Set the background color to white
+        root.configure(background="white")
         root.geometry(
             f"{400}x{100}+{root.winfo_screenwidth() - 400}+{root.winfo_screenheight() - 100}"
         )
         label = Label(
             root, text=TXT_GUI_WAITING, font=("Multicolore", 45), bg="white"
-        )  # Set widget background color to white
+        )
         label.pack()
         return root, label
 
     def update_status(self, message: str, status: str, color: str) -> None:
-        """
-        Updates the status message in the GUI.
-
-        Args:
-            message (str): The status message.
-            status (str): The status indicator.
-            color (str): The color of the status message.
-        """
+        self.previous_status_message = self.last_status_message
+        self.previous_status_color = self.last_status_color
+        self.last_status_message = message
+        self.last_status_color = color
         self.label.config(text=message, fg=color)
         self.root.update()
         self.logger.info(f"Status updated: {message}")
-        self.last_status_message = message
-        self.last_status_color = color
 
+    def restore_previous_status(self) -> None:
+        self.update_status(self.previous_status_message, "", self.previous_status_color)
 
     def process_gui_queue(self) -> None:
-        """
-        Processes the GUI queue for status updates.
-        """
         while not self.gui_queue.empty():
             task = self.gui_queue.get()
             if task[0] == "update_status":
@@ -501,9 +345,6 @@ class RecordingApp:
         self.root.after(100, self.process_gui_queue)
 
     def start_recording(self) -> None:
-        """
-        Starts the OBS recording and updates the status.
-        """
         self.obs_recorder.start_recording()
         if self.obs_recorder.pause_resume_counter % 2 == 1:
             self.gui_queue.put(("update_status", TXT_GUI_PAUSE, "PAUSE", "blue"))
@@ -517,11 +358,7 @@ class RecordingApp:
             else:
                 self.gui_queue.put(("start_timer",))
 
-
     def stop_recording(self) -> None:
-        """
-        Stops the OBS recording, updates the status, and initiates video upload.
-        """
         self.obs_recorder.stop_recording()
         self.gui_queue.put(("update_status", TXT_GUI_COMPLETED, "COMPLETED", "red"))
         self.gui_queue.put(("stop_timer",))
@@ -531,16 +368,12 @@ class RecordingApp:
         self.capture_screenshot(message="Etat du tableau à la fin du recording")
 
     def upload_video(self) -> None:
-        """
-        Uploads the latest recorded video to YouTube and sends a notification to Discord.
-        """
         try:
             video_file = self.obs_recorder.find_latest_video()
             if not video_file:
                 self.logger.error("No video file found for upload")
                 return
 
-            # Wait for obs to render all the video before uploading
             time.sleep(5)
 
             video_url = self.youtube_uploader.upload_video(video_file)
@@ -575,10 +408,10 @@ class RecordingApp:
         screenshot_path = os.path.join(
             self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
         )
-        
+
         # Update GUI status
         self.gui_queue.put(("update_status", "SCREENSHOT", "SCREENSHOT", "green"))
-        
+
         # Capture screenshot based on the operating system
         if platform.system() == "Linux":
             subprocess.run(["gnome-screenshot", "-f", screenshot_path])
@@ -587,38 +420,25 @@ class RecordingApp:
             screenshot.save(screenshot_path)
         else:
             raise NotImplementedError("Unsupported OS")
-        
-        # Restore previous status after 3 seconds
-        self.root.after(
-            3000,
-            lambda: self.gui_queue.put(
-                (
-                    "update_status",
-                    self.previous_status_message,
-                    self.previous_status_message,
-                    self.previous_status_color,
-                )
-            ),
-        )
-        
+
+        # Restore previous status directly after capturing the screenshot
+        self.restore_previous_status()
+
         # Find the latest image and upload it
         image_file = self.obs_recorder.find_latest_image()
         if not image_file:
             self.logger.error("No image file found for upload")
             return
-        
+
         self.discord_notifier.send_discord_image(image_file, message)
 
     def run(self) -> None:
-        """
-        Runs the recording application, setting up keyboard event handling and the GUI loop.
-        """
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
 
     def start_timer(self) -> None:
         if self.is_paused:
-            self.start_time = time.time() - self.paused_time  # Reprendre à partir du temps où il a été mis en pause
+            self.start_time = time.time() - self.paused_time
         else:
             if self.start_time is None:
                 self.start_time = time.time()
@@ -639,13 +459,13 @@ class RecordingApp:
     def pause_timer(self) -> None:
         if self.running and not self.is_paused:
             self.elapsed_time = time.time() - self.start_time
-            self.paused_time = self.elapsed_time  # Enregistrer le temps écoulé jusqu'à présent
+            self.paused_time = self.elapsed_time
             self.running = False
             self.is_paused = True
 
     def resume_timer(self) -> None:
         if not self.running:
-            self.start_timer()  # Reprendre à partir du temps où il a été mis en pause
+            self.start_timer()
             self.is_paused = False
 
     def update_timer(self) -> None:
