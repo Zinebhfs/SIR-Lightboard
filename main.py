@@ -110,7 +110,7 @@ class OBSRecorder:
         response = self.client.call(obs_requests.GetRecordStatus())
         print(response)
         return response
-    
+
     def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
         connected = False
         for _ in range(retries):
@@ -410,7 +410,9 @@ class RecordingApp:
                 elif self.state == "PAUSE":
                     self.update_state("EN_COURS")
                     self.end_paused_time = time.time()
-                    self.paused_time += int(self.end_paused_time - self.start_paused_time)
+                    self.paused_time += int(
+                        self.end_paused_time - self.start_paused_time
+                    )
                     self.start_paused_time = None
                     self.end_paused_time = None
                     self.gui_queue.put(("launch_timer",))
@@ -448,19 +450,23 @@ class RecordingApp:
                 self.capture_screenshot(
                     message="Capture d'ecran de la vidéo en cours", show_gui=True
                 )
-                time.sleep(3)
-                self.restore_previous_status()  # After 3 seconds, restore previous state
+                self.restore_previous_status()
                 if self.state in ["EN_COURS", "PAUSE"]:
                     self.gui_queue.put(("launch_timer",))
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
+
+        if show_gui:
+            for count in reversed(range(1, 4)):
+                self.label.config(text=f"{count}", fg="red")
+                self.root.update()
+                time.sleep(1)
+            self.gui_queue.put(("update_gui_message", "SCREENSHOT", "green"))
+
+        time.sleep(0.5)
         screenshot_path = os.path.join(
             self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
         )
-
-        # Update GUI status
-        if show_gui:
-            self.gui_queue.put(("update_gui_message", "SCREENSHOT", "green"))
 
         # Capture screenshot based on the operating system
         if platform.system() == "Linux":
