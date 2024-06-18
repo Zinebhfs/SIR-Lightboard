@@ -14,10 +14,8 @@ from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
 import nest_asyncio
-import threading
 import queue
 import time
-from keyboard import KeyboardEvent
 import subprocess
 import platform
 import pyautogui
@@ -157,7 +155,7 @@ class OBSRecorder:
             if self.pause_resume_counter % 2 == 1:
                 response = self.client.call(obs_requests.PauseRecord())
                 self.logger.info(TXT_LOGGER_PAUSE_RECORD)
-                self.capture_screenshot() # Todo: Fix this
+                self.capture_screenshot()  # Todo: Fix this
             else:
                 response = self.client.call(obs_requests.ResumeRecord())
                 self.logger.info(TXT_LOGGER_RESUME_RECORD)
@@ -366,7 +364,7 @@ class RecordingApp:
         self.gui_queue.put(("stop_timer",))
         self.gui_queue.put(("reset_timer",))
         self.gui_queue.put(("upload_video",))
-        time.sleep(1) # Wait for the man to clean the board
+        time.sleep(1)  # Wait for the man to clean the board
         self.capture_screenshot(message="Etat du tableau à la fin du recording", show_gui=False)
 
     def upload_video(self) -> None:
@@ -394,7 +392,7 @@ class RecordingApp:
             self.obs_recorder.disconnect()
             exit()
 
-    def on_key_event(self, event: KeyboardEvent):
+    def on_key_event(self, event: keyboard.KeyboardEvent):
         if event.event_type == keyboard.KEY_DOWN:
             if event.name == '"' or event.name == "3":
                 self.logger.info("Record key pressed: starting recording")
@@ -479,6 +477,7 @@ class RecordingApp:
             self.label.config(text=f"{minutes:02}:{seconds:02}")
             self.root.update_idletasks()
             self.root.after(1000, self.update_timer)
+
 
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
