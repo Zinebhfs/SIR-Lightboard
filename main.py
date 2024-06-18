@@ -403,8 +403,18 @@ class RecordingApp:
                     self.obs_recorder.resume_recording()
                     self.obs_recorder.get_video_status()
 
+                elif self.state == "ENREGISTREMENT":
+                    self.logger.info(
+                        "Upload in progress, please wait for the video to be uploaded before taking another action"
+                    )
+                elif self.state == "SCREENSHOT":
+                    self.logger.info("Screenshot in progress, pls wait before taking another action")
+                else:
+                    self.logger.info(f"Unexpected action ⏯️ with state {self.state}")
+
             # Action : 🟥
             elif event.name == "é" or event.name == "2":
+                
                 if self.state == "PAUSE" or self.state == "EN_COURS":
                     self.update_state("ENREGISTREMENT")
                     self.obs_recorder.stop_recording()
@@ -427,16 +437,37 @@ class RecordingApp:
                     self.paused_time: int = 0
                     self.update_state("EN_ATTENTE")
                     self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
+                    
+                elif self.state == "ENREGISTREMENT":
+                    self.logger.info(
+                        "Recording already stopped, please wait for upload"
+                    )
+
+                elif self.state == "SCREENSHOT":
+                    self.logger.info("Screenshot in progress, pls wait before taking another action")
+
+                else:
+                    self.logger.info(f"Unexpected action 🟥 with state {self.state}")
+            
 
             # Action : 📷
             elif event.name == "&" or event.name == "1":
-                self.update_state("SCREENSHOT")
-                self.capture_screenshot(
-                    message="Capture d'ecran de la vidéo en cours", show_gui=True
-                )
-                self.restore_previous_status()
-                if self.state in ["EN_COURS", "PAUSE"]:
-                    self.gui_queue.put(("launch_timer",))
+                if self.state != "SCREENSHOT":
+                    self.update_state("SCREENSHOT")
+                    self.capture_screenshot(
+                        message="Capture d'ecran de la vidéo en cours", show_gui=True
+                    )
+                    self.restore_previous_status()
+                    
+                    if self.state == "EN_COURS" or self.state == "PAUSE":
+                        self.gui_queue.put(("launch_timer",))
+                        
+                elif self.state == "SCREENSHOT":
+                    self.logger.info(
+                        "Screenshot already in progress, pls wait before taking another one"
+                    )
+                else:
+                    self.logger.info(f"Unexpected action 📷 with state {self.state}")
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
 
