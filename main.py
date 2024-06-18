@@ -237,7 +237,7 @@ class DiscordNotifier:
     def send_discord_message(self, url: str) -> None:
         message = {"content": TXT_DISCORD_MSG_TEMPLATE.format(url=url)}
         response = requests.post(self.webhook_url, json=message)
-        if response.status_code == 204:
+        if response.status_code == 200:
             self.logger.info(TXT_DISCORD_MSG_SENT)
         else:
             self.logger.error(f"Failed to send message: {response.status_code}")
@@ -247,7 +247,7 @@ class DiscordNotifier:
             response = requests.post(
                 self.webhook_url, files={"file": file}, data={"content": message}
             )
-            if response.status_code == 204:
+            if response.status_code == 200:
                 self.logger.info(TXT_DISCORD_MSG_SENT)
             else:
                 self.logger.error(f"Failed to send image: {response.status_code}")
