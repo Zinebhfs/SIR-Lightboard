@@ -6,10 +6,7 @@ import discord
 import asyncio
 import logging
 from typing import Optional, Tuple
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build, Resource
-from googleapiclient.http import MediaFileUpload
-import googleapiclient.errors
+from ftplib import FTP
 from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
@@ -45,14 +42,7 @@ TXT_OBS_START_RECORD = "Started recording"
 TXT_OBS_STOP_RECORD = "Stopped recording"
 TXT_OBS_DISCONNECTED = "Disconnected from OBS"
 TXT_OBS_LATEST_VIDEO = "Latest video found: {video}"
-TXT_YT_CLIENT_SECRETS_FILE = os.getenv("CLIENT_SECRETS_FILE", "client_secret.json")
-TXT_YT_TOKEN_FILE = os.getenv("TOKEN_FILE", "token.pkl")
-TXT_YT_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
-TXT_YT_CLIENT_INIT = "YouTube client initialized"
-TXT_YT_CREDENTIALS_LOADED = "Loaded credentials from token file"
-TXT_YT_TOKEN_NOT_FOUND = "Token file not found, creating new credentials"
-TXT_YT_CREDENTIALS_SAVED = "New credentials saved to token file"
-TXT_DISCORD_WEBHOOK_URL= os.getenv("DISCORD_WEBHOOK_URL")
+TXT_DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 TXT_DISCORD_INIT = "Discord notifier initialized"
 TXT_DISCORD_MSG_SENT = "Message sent to Discord channel via webhook"
 TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
@@ -63,8 +53,11 @@ TXT_GUI_FINISH_RECORDING = "ENREGISTREMENT"
 TXT_GUI_ERROR = "ERROR"
 TXT_GUI_PAUSE = "PAUSE"
 TXT_GUI_TIMER = "00:00"
-TXT_GUI_GOOGLE_QUOTA_ERROR = "Google quota exceeded"
 TXT_GUI_UNEXPECTED_ERROR = "An unexpected error occurred"
+
+TXT_FTP_SERVER_PATH = os.getenv("FTP_SERVER_PATH")
+TXT_FTP_SERVER_USER = os.getenv("FTP_SERVER_USER")
+TXT_FTP_SERVER_PASS_PHRASE = os.getenv("FTP_SERVER_PASS_PHRASE")
 
 nest_asyncio.apply()
 
@@ -183,49 +176,33 @@ class OBSRecorder:
         return latest_image
 
 
-class YouTubeUploader:
-    def __init__(self, logger: logging.Logger):
+class FTPUploader:
+    def __init__(self, server: str, username: str, passphrase: str, logger: logging.Logger):
         self.logger = logger
-        self.client_secrets_file: str = TXT_YT_CLIENT_SECRETS_FILE
-        self.token_file: str = TXT_YT_TOKEN_FILE
-        self.credentials = self.get_credentials()
-        self.youtube: Resource = build("youtube", "v3", credentials=self.credentials)
-        self.logger.info(TXT_YT_CLIENT_INIT)
+        self.server = server
+        self.username = username
+        self.passphrase = passphrase
+        self.ftp = FTP(server)
+        self.connect()
 
-    def get_credentials(self):
+    def connect(self):
         try:
-            with open(self.token_file, "rb") as token:
-                self.logger.info(TXT_YT_CREDENTIALS_LOADED)
-                return pickle.load(token)
-        except FileNotFoundError:
-            self.logger.warning(TXT_YT_TOKEN_NOT_FOUND)
-            flow = InstalledAppFlow.from_client_secrets_file(
-                self.client_secrets_file, TXT_YT_SCOPES
-            )
-            credentials = flow.run_local_server(port=0)
-            with open(self.token_file, "wb") as token:
-                pickle.dump(credentials, token)
-            self.logger.info(TXT_YT_CREDENTIALS_SAVED)
-            return credentials
+            self.ftp.login(user=self.username, passwd=self.passphrase)
+            self.logger.info(f"Connected to FTP server: {self.server}")
+        except Exception as e:
+            self.logger.error(f"Failed to connect to FTP server: {e}")
 
-    def upload_video(self, video_file: str) -> str:
-        body = {
-            "snippet": {
-                "title": "Video TC INSA Lyon",
-                "description": "",
-                "tags": ["tag1", "tag2"],
-            },
-            "status": {"privacyStatus": "unlisted"},
-        }
-        media = MediaFileUpload(video_file, chunksize=-1, resumable=True)
-        response = (
-            self.youtube.videos()
-            .insert(part="snippet,status", body=body, media_body=media)
-            .execute()
-        )
-        video_id = response["id"]
-        self.logger.info(f"Video uploaded to YouTube: {video_id}")
-        return f"https://www.youtube.com/watch?v={video_id}"
+    def upload_file(self, file_path: str, remote_path: str):
+        with open(file_path, "rb") as file:
+            try:
+                self.ftp.storbinary(f"STOR {remote_path}", file)
+                self.logger.info(f"File uploaded to FTP: {remote_path}")
+            except Exception as e:
+                self.logger.error(f"Failed to upload file to FTP: {e}")
+
+    def disconnect(self):
+        self.ftp.quit()
+        self.logger.info(f"Disconnected from FTP server: {self.server}")
 
 
 class DiscordNotifier:
@@ -257,7 +234,12 @@ class RecordingApp:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
         self.obs_recorder = OBSRecorder(logger)
-        self.youtube_uploader = YouTubeUploader(logger)
+        self.ftp_uploader = FTPUploader(
+            server=TXT_FTP_SERVER_PATH,
+            username=TXT_FTP_SERVER_USER,
+            passphrase=TXT_FTP_SERVER_PASS_PHRASE,
+            logger=logger
+        )
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
@@ -333,15 +315,11 @@ class RecordingApp:
 
             time.sleep(5)  # Wait for the video to be fully written to disk
 
-            video_url = self.youtube_uploader.upload_video(video_file)
+            remote_path = os.path.basename(video_file)
+            self.ftp_uploader.upload_file(video_file, remote_path)
+            video_url = f"ftp://{self.ftp_uploader.server}/{remote_path}"
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(video_url)
-        except googleapiclient.errors.ResumableUploadError as e:
-            self.logger.error("Google API quota exceeded. Unable to upload video.")
-            self.update_gui_message("Google quota exceeded", "red")
-            time.sleep(5)
-            self.obs_recorder.disconnect()
-            exit()
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
             self.update_gui_message("An unexpected error occurred", "red")
