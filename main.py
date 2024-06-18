@@ -165,21 +165,6 @@ class OBSRecorder:
         except Exception as e:
             self.logger.error(f"Erreur lors de la reprise de l'enregistrement : {e}")
 
-    # def toggle_pause_resume_recording(self) -> None:
-    #     self.pause_resume_counter += 1
-    #     try:
-    #         if self.pause_resume_counter % 2 == 1:
-    #             response = self.client.call(obs_requests.PauseRecord())
-    #             self.logger.info(TXT_LOGGER_PAUSE_RECORD)
-    #             self.capture_screenshot()  # Todo: Fix this
-    #         else:
-    #             response = self.client.call(obs_requests.ResumeRecord())
-    #             self.logger.info(TXT_LOGGER_RESUME_RECORD)
-    #     except Exception as e:
-    #         self.logger.error(
-    #             f"Erreur lors de la bascule pause/reprise de l'enregistrement : {e}"
-    #         )
-
     def disconnect(self) -> None:
         self.client.disconnect()
         self.logger.info(TXT_OBS_DISCONNECTED)
