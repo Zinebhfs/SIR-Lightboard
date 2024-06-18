@@ -33,7 +33,10 @@ chmod +777 config/includes.chroot_after_packages/etc/skel/.xsessionrc
 echo "These config file for the main python app is not in git, because it's sensistive (API keys). If they are not present, this script will fail."
 cp ../../.env config/includes.chroot_after_packages/etc/skel/.env
 chmod +777 config/includes.chroot_after_packages/etc/skel/.env
-cp ../../token.pkl config/includes.chroot_after_packages/etc/skel/token.pkl
-chmod +777 config/includes.chroot_after_packages/etc/skel/token.pkl
-cp ../../client_secret.json config/includes.chroot_after_packages/etc/skel/client_secret.json
-chmod +777 config/includes.chroot_after_packages/etc/skel/client_secret.json
+
+# SSH key
+mkdir -p config/includes.chroot_after_packages/etc/skel/.ssh/
+cp ../../id_rsa.dat config/includes.chroot_after_packages/etc/skel/.ssh/id_rsa.dat
+chmod +777 config/includes.chroot_after_packages/etc/skel/.ssh/id_rsa.dat
+cp ../../id_rsa.pub config/includes.chroot_after_packages/etc/skel/.ssh/id_rsa.pub
+chmod +777 config/includes.chroot_after_packages/etc/skel/.ssh/id_rsa.pub
