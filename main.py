@@ -306,14 +306,13 @@ class RecordingApp:
         self.previous_state = "EN_ATTENTE"
         self.state = "EN_ATTENTE"  # Initialize the state
 
-        self.update_gui_message(self.last_status_message, self.last_status_color)
-
         self.elapsed_time: int = 0
         self.start_time = None
         self.start_paused_time = None
         self.end_paused_time = None
         self.paused_time: int = 0
-
+        time.sleep(1)
+        self.update_gui_message(self.last_status_message, self.last_status_color)
         self.capture_screenshot(message="Etat du tableau au démarrage", show_gui=False)
 
     def update_state(self, new_state: str):
