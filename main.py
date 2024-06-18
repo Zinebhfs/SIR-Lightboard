@@ -28,7 +28,7 @@ load_dotenv()
 TXT_LOG_FILE = "lightboard.txt"
 TXT_CONSOLE_HANDLER_LEVEL = logging.DEBUG
 TXT_FILE_HANDLER_LEVEL = logging.DEBUG
-TXT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+TXT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levellevelname)s - %(message)s"
 TXT_LOGGER_STARTING_APP = "Starting Lightboard app..."
 TXT_LOGGER_PAUSE_RECORD = "Recording paused"
 TXT_LOGGER_RESUME_RECORD = "Recording resumed"
@@ -157,6 +157,7 @@ class OBSRecorder:
             if self.pause_resume_counter % 2 == 1:
                 response = self.client.call(obs_requests.PauseRecord())
                 self.logger.info(TXT_LOGGER_PAUSE_RECORD)
+                self.capture_screenshot()
             else:
                 response = self.client.call(obs_requests.ResumeRecord())
                 self.logger.info(TXT_LOGGER_RESUME_RECORD)
@@ -283,19 +284,20 @@ class RecordingApp:
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
-        self.last_status_message = "EN ATTENTE"
-        self.last_status_color = "black"
+        self.last_status_message = TXT_GUI_TIMER
+        self.last_status_color = "green"
         self.keyboard_hook = keyboard.hook(self.on_key_event)
         self.previous_status_message = self.last_status_message
         self.previous_status_color = self.last_status_color
-        self.capture_screenshot(
-            message="État du tableau au démarrage de la solution lightboard TC"
-        )
+
+        self.update_status(self.last_status_message, "", self.last_status_color)
 
         self.is_paused = False
         self.elapsed_time = 0
         self.start_time = None
         self.paused_time = 0
+
+        self.capture_screenshot_silent()
 
     def create_status_window(self) -> Tuple[Tk, Label]:
         root = Tk()
@@ -431,6 +433,27 @@ class RecordingApp:
             return
 
         self.discord_notifier.send_discord_image(image_file, message)
+
+    def capture_screenshot_silent(self) -> None:
+        screenshot_path = os.path.join(
+            self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
+        )
+
+        # Capture screenshot based on the operating system
+        if platform.system() == "Linux":
+            subprocess.run(["gnome-screenshot", "-f", screenshot_path])
+        elif platform.system() == "Windows":
+            screenshot = pyautogui.screenshot()
+            screenshot.save(screenshot_path)
+        else:
+            raise NotImplementedError("Unsupported OS")
+            
+        image_file = self.obs_recorder.find_latest_image()
+        if not image_file:
+            self.logger.error("No image file found for upload")
+            return
+
+        self.discord_notifier.send_discord_image(image_file, message)    
 
     def run(self) -> None:
         self.root.after(100, self.process_gui_queue)
