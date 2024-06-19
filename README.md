@@ -150,7 +150,6 @@ sequenceDiagram
 
     Intervant & Clavier ->> Ordinateur: Bouton rouge
     Ordinateur ->> Écran & Pop-up: Terminé
-    Ordinateur ->> Écran & Pop-up: 30..29..()..1..
     Ordinateur ->> PodINSA: Publication
     Ordinateur ->> Écran & Pop-up: SCREENSHOT, état du tableau
     Ordinateur ->> Discord: Envoi de la capture d'écran
