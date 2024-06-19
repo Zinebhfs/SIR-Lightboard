@@ -100,6 +100,70 @@ flowchart TB
     Enregistrement -. "Après 3 sec" .-> En_attente
 ```
 
+### User usage Sequence diagram 
+Sequence diagram of the user usage.
+
+```mermaid
+sequenceDiagram
+    participant Intervant & Clavier
+    participant Interrupteur Mural
+    participant Ordinateur
+    participant Écran & Pop-up
+    participant Lightboard & LED
+    participant PodINSA
+    participant Discord
+
+    Note right of Intervant & Clavier: Lancement de la solution
+
+    Intervant & Clavier ->> Interrupteur Mural: Allumer
+    Interrupteur Mural ->> Ordinateur: Démarrage
+    Ordinateur ->> Ordinateur: Lancement du script
+    Ordinateur ->> Écran & Pop-up: Retour caméra & Pop-up
+    Interrupteur Mural ->> Lightboard & LED: Démarrage
+    Ordinateur ->> Écran & Pop-up: SCREENSHOT, état du tableau
+    Ordinateur ->> Discord: Envoi de la capture d'écran
+    Ordinateur ->> Écran & Pop-up: ATTENTE
+
+    Note right of Intervant & Clavier: Début de l'enregistrement
+
+    Intervant & Clavier ->> Ordinateur: Bouton vert
+    Ordinateur ->> Écran & Pop-up: EN COURS : Chronomètre
+    Ordinateur ->> Ordinateur: Stockage /mnt/nvme0n1
+
+    Note right of Intervant & Clavier: Possibilité de faire des screenshot avant/pendant/après l'enregistrement
+
+    Intervant & Clavier ->> Ordinateur: Bouton blanc
+    Ordinateur ->> Écran & Pop-up: 3..2..1..SCREENSHOT
+    Ordinateur ->> Discord: Envoi de la capture d'écran
+
+    Note right of Intervant & Clavier: Pause de l'enregistrement
+
+    Intervant & Clavier ->> Ordinateur: Bouton vert
+    Ordinateur ->> Écran & Pop-up: EN COURS : Chronomètre arrêté
+
+    Note right of Intervant & Clavier: Reprise de l'enregistrement
+
+    Intervant & Clavier ->> Ordinateur: Bouton vert
+    Ordinateur ->> Écran & Pop-up: EN COURS : reprise du Chronomètre
+
+    Note right of Intervant & Clavier: Fin de l'enregistrement
+
+    Intervant & Clavier ->> Ordinateur: Bouton rouge
+    Ordinateur ->> Écran & Pop-up: Terminé
+    Ordinateur ->> Écran & Pop-up: 30..29..()..1..
+    Ordinateur ->> PodINSA: Publication
+    Ordinateur ->> Écran & Pop-up: SCREENSHOT, état du tableau
+    Ordinateur ->> Discord: Envoi de la capture d'écran
+
+    Note right of Intervant & Clavier: Récupérer la vidéo publiée
+
+    Intervant & Clavier ->> Discord: Accès à l'URL de PodINSA
+    Ordinateur ->> Écran & Pop-up: ATTENTE
+
+    Intervant & Clavier ->> Interrupteur Mural: Éteindre
+    Intervant & Clavier ->> Lightboard & LED: Nettoyer le lightboard
+```
+
 ### Sequence diagram
 Sequence diagram of the main workflow of the script.
 ```mermaid
