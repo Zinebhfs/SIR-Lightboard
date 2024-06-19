@@ -113,7 +113,7 @@ sequenceDiagram
     participant PodINSA
     participant Discord
 
-    Note right of User: Lancement de la solution
+    Note right of Intervant & Clavier: Lancement de la solution
 
     Intervant & Clavier ->> Interrupteur Mural: Allumer
     Interrupteur Mural ->> Ordinateur: Démarrage
@@ -124,24 +124,26 @@ sequenceDiagram
     Ordinateur ->> Discord: Envoi de la capture d'écran
     Ordinateur ->> Écran & Pop-up: ATTENTE
 
-    Note right of User: Début de l'enregistrement
+    Note right of Intervant & Clavier: Début de l'enregistrement
 
     Intervant & Clavier ->> Ordinateur: Bouton vert
     Ordinateur ->> Écran & Pop-up: EN COURS : Chronomètre
     Ordinateur ->> Ordinateur: Stockage /mnt/nvme0n1
 
-    Note right of User: Possibilité de faire des screenshot avant/pendant/après l'enregistrement
+    Note right of Intervant & Clavier: Possibilité de faire des screenshot avant/pendant/après l'enregistrement
 
     Intervant & Clavier ->> Ordinateur: Bouton blanc
     Ordinateur ->> Écran & Pop-up: 3..2..1..SCREENSHOT
     Ordinateur ->> Discord: Envoi de la capture d'écran
 
-    Note right of User: Pause de l'enregistrement
+    Note right of Intervant & Clavier: Pause de l'enregistrement
 
     Intervant & Clavier ->> Ordinateur: Bouton vert
     Ordinateur ->> Écran & Pop-up: EN COURS : Chronomètre arrêté
+    Intervant & Clavier ->> Ordinateur: Bouton vert
+    Ordinateur ->> Écran & Pop-up: EN COURS : reprise du Chronomètre
 
-    Note right of User: Fin de l'enregistrement
+    Note right of Intervant & Clavier: Fin de l'enregistrement
 
     Intervant & Clavier ->> Ordinateur: Bouton rouge
     Ordinateur ->> Écran & Pop-up: Terminé
@@ -150,7 +152,7 @@ sequenceDiagram
     Ordinateur ->> Écran & Pop-up: SCREENSHOT, état du tableau
     Ordinateur ->> Discord: Envoi de la capture d'écran
 
-    Note right of User: Récupérer la vidéo publiée
+    Note right of Intervant & Clavier: Récupérer la vidéo publiée
 
     Intervant & Clavier ->> Discord: Accès à l'URL de PodINSA
     Ordinateur ->> Écran & Pop-up: ATTENTE
