@@ -325,7 +325,7 @@ class RecordingApp:
             time.sleep(5)  # Wait for the video to be fully written to disk
 
             file_name = os.path.basename(video_file)
-            remote_path = f"/TC/{file_name}
+            remote_path = f"/TC/{file_name}"
             self.ftp_uploader.upload_file(video_file, f"/TC/{remote_path}")
             video_url = f"ftp://{self.ftp_uploader.server}/{remote_path}"
             self.logger.info(f"Video URL: {video_url}")
