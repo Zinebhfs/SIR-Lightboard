@@ -22,3 +22,5 @@ pyopenssl
 pyasn1
 # Screenshot for windows
 pyautogui
+
+paramiko

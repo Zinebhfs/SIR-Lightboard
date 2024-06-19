@@ -6,7 +6,8 @@ import discord
 import asyncio
 import logging
 from typing import Optional, Tuple
-from ftplib import FTP
+import logging
+import paramiko
 from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
@@ -177,33 +178,40 @@ class OBSRecorder:
 
 
 class FTPUploader:
-    def __init__(self, server: str, username: str, passphrase: str, logger: logging.Logger):
-        self.logger = logger
+    def __init__(self, server: str, username: str, key_path: str, passphrase: str, logger: logging.Logger):
         self.server = server
         self.username = username
+        self.key_path = key_path
         self.passphrase = passphrase
-        self.ftp = FTP(server)
-        self.connect()
+        self.logger = logger
+        self.sftp = None
 
     def connect(self):
         try:
-            self.ftp.login(user=self.username, passwd=self.passphrase)
-            self.logger.info(f"Connected to FTP server: {self.server}")
+            key = paramiko.RSAKey.from_private_key_file(self.key_path, password=self.passphrase)
+            transport = paramiko.Transport((self.server, 22))
+            transport.connect(username=self.username, pkey=key)
+            self.sftp = paramiko.SFTPClient.from_transport(transport)
+            self.logger.info("Connected to SFTP server")
         except Exception as e:
-            self.logger.error(f"Failed to connect to FTP server: {e}")
+            self.logger.error(f"Failed to connect to SFTP server: {e}")
 
-    def upload_file(self, file_path: str, remote_path: str):
-        with open(file_path, "rb") as file:
-            try:
-                self.ftp.storbinary(f"STOR {remote_path}", file)
-                self.logger.info(f"File uploaded to FTP: {remote_path}")
-            except Exception as e:
-                self.logger.error(f"Failed to upload file to FTP: {e}")
+    def upload_file(self, local_path: str, remote_path: str):
+        if not self.sftp:
+            self.logger.error("SFTP connection not established")
+            return
+        try:
+            self.sftp.put(local_path, remote_path)
+            self.logger.info(f"Uploaded {local_path} to {remote_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to upload file: {e}")
 
     def disconnect(self):
-        self.ftp.quit()
-        self.logger.info(f"Disconnected from FTP server: {self.server}")
-
+        if self.sftp:
+            self.sftp.close()
+            self.logger.info("Disconnected from SFTP server")
+        else:
+            self.logger.warning("SFTP connection was not established")
 
 class DiscordNotifier:
     def __init__(self, logger: logging.Logger):
