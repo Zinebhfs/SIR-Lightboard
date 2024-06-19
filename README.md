@@ -140,6 +140,9 @@ sequenceDiagram
 
     Intervant & Clavier ->> Ordinateur: Bouton vert
     Ordinateur ->> Écran & Pop-up: EN COURS : Chronomètre arrêté
+
+    Note right of Intervant & Clavier: Reprise de l'enregistrement
+
     Intervant & Clavier ->> Ordinateur: Bouton vert
     Ordinateur ->> Écran & Pop-up: EN COURS : reprise du Chronomètre
 
