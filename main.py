@@ -46,7 +46,7 @@ TXT_OBS_LATEST_VIDEO = "Latest video found: {video}"
 TXT_DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 TXT_DISCORD_INIT = "Discord notifier initialized"
 TXT_DISCORD_MSG_SENT = "Message sent to Discord channel via webhook"
-TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible grâce à l'URL suivant : \n{url}"
+TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible sur https://videos.insa-lyon.fr/record/claim_record/"
 TXT_GUI_WAITING = "EN ATTENTE"
 TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
@@ -230,10 +230,10 @@ class DiscordNotifier:
         self.webhook_url: str = TXT_DISCORD_WEBHOOK_URL
         self.logger.info(TXT_DISCORD_INIT)
 
-    def send_discord_message(self, url: str) -> None:
-        message = {"content": TXT_DISCORD_MSG_TEMPLATE.format(url=url)}
+    def send_discord_message(self, message) -> None:
+        message = {"content": message}
         response = requests.post(self.webhook_url, json=message)
-        if response.status_code == 200:
+        if response.status_code == 204:
             self.logger.info(TXT_DISCORD_MSG_SENT)
         else:
             self.logger.error(f"Failed to send message: {response.status_code}")
@@ -243,7 +243,7 @@ class DiscordNotifier:
             response = requests.post(
                 self.webhook_url, files={"file": file}, data={"content": message}
             )
-            if response.status_code == 200:
+            if response.status_code == 204:
                 self.logger.info(TXT_DISCORD_MSG_SENT)
             else:
                 self.logger.error(f"Failed to send image: {response.status_code}")
@@ -339,7 +339,7 @@ class RecordingApp:
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             self.logger.info(f"Video URL: {video_url}")
-            self.discord_notifier.send_discord_message(video_url)
+            self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE)
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
             self.update_gui_message("An unexpected error occurred", "red")

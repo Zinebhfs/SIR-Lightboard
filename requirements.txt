@@ -6,11 +6,6 @@ discord.py==2.3.2
 nest-asyncio==1.6.0
 # TKINTER PACKET
 tk==0.1.0
-# GOOGLE PACKETS 
-google-api-python-client==2.130.0
-google-auth==2.29.0
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
 # EQUIPMENTS PACKET
 requests==2.28.1
 keyboard==0.13.5
