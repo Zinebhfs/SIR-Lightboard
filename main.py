@@ -1,7 +1,6 @@
 import os
 import glob
 import keyboard
-import logging
 from typing import Optional, Tuple
 import logging
 import paramiko
@@ -88,7 +87,6 @@ class OBSRecorder:
         self.port: int = TXT_OBS_PORT
         self.video_path: str = TXT_OBS_VIDEO_PATH
         self.client = obsws(self.host, self.port)
-        # self.recording_state = 0
         self.pause_resume_counter = 0
 
         self.connect_with_retry()
@@ -216,28 +214,30 @@ class FTPUploader:
 
 
 class DiscordNotifier:
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, webhook_url: str, logger: logging.Logger):
+        self.webhook_url = webhook_url
         self.logger = logger
-        self.webhook_url: str = TXT_DISCORD_WEBHOOK_URL
         self.logger.info(TXT_DISCORD_INIT)
 
-    def send_discord_message(self, message) -> None:
-        message = {"content": message}
-        response = requests.post(self.webhook_url, json=message)
-        if response.status_code == 204 or response.status_code == 200:
+    def send_discord_message(self, message: str) -> None:
+        message_data = {"content": message}
+        try:
+            response = requests.post(self.webhook_url, json=message_data)
+            response.raise_for_status()
             self.logger.info(TXT_DISCORD_MSG_SENT)
-        else:
-            self.logger.error(f"Failed to send message: {response.status_code}")
+        except requests.RequestException as e:
+            self.logger.error(f"Failed to send message: {e}")
 
     def send_discord_image(self, path: str, message: str) -> None:
         with open(path, "rb") as file:
-            response = requests.post(
-                self.webhook_url, files={"file": file}, data={"content": message}
-            )
-            if response.status_code == 204 or response.status_code == 200:
+            try:
+                response = requests.post(
+                    self.webhook_url, files={"file": file}, data={"content": message}
+                )
+                response.raise_for_status()
                 self.logger.info(TXT_DISCORD_MSG_SENT)
-            else:
-                self.logger.error(f"Failed to send image: {response.status_code}")
+            except requests.RequestException as e:
+                self.logger.error(f"Failed to send image: {e}")
 
 
 class RecordingApp:
@@ -251,7 +251,9 @@ class RecordingApp:
             logger=logger,
             key_path="/home/user/.ssh/id_rsa.dat",
         )
-        self.discord_notifier = DiscordNotifier(logger)
+        self.discord_notifier = DiscordNotifier(
+            webhook_url=TXT_DISCORD_WEBHOOK_URL, logger=logger
+        )
         self.root, self.label = self.create_status_window()
         self.last_status_message = TXT_GUI_WAITING
         self.last_status_color = "black"
@@ -271,7 +273,6 @@ class RecordingApp:
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
         self.capture_screenshot(message="Etat du tableau au démarrage", show_gui=False)
-        
 
     def update_state(self, new_state: str):
         self.logger.info(f"{self.state} -> {new_state}")
@@ -317,15 +318,14 @@ class RecordingApp:
             self.update_gui_message(TXT_GUI_FINISH_RECORDING + dots, "red")
             time.sleep(0.5)
 
-
     def upload_video(self) -> None:
         self.uploaded = False
+
         def myfunc():
             video_file = self.obs_recorder.find_latest_video()
             if not video_file:
                 self.logger.error("No video file found for upload")
                 return
-
 
             file_name = os.path.basename(video_file).replace(" ", "_")
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
@@ -341,8 +341,6 @@ class RecordingApp:
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
             self.update_gui_message("An unexpected error occurred", "red")
-
-
 
     def on_key_event(self, event: keyboard.KeyboardEvent):
         if event.event_type == keyboard.KEY_DOWN:
@@ -463,6 +461,7 @@ class RecordingApp:
         self.executor.submit(
             self.discord_notifier.send_discord_image, image_file, message
         )
+
     def run(self) -> None:
         self.root.mainloop()
 
