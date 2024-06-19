@@ -9,14 +9,11 @@ from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
 import nest_asyncio
-import queue
 import time
 import subprocess
 import platform
 import pyautogui
 import requests
-import asyncio
-import threading
 import concurrent.futures
 
 # Load environment variables from .env file
@@ -95,11 +92,6 @@ class OBSRecorder:
         self.pause_resume_counter = 0
 
         self.connect_with_retry()
-
-    def get_video_status(self) -> str:
-        response = self.client.call(obs_requests.GetRecordStatus())
-        print(response)
-        return response
 
     def connect_with_retry(self, retries: int = 30, delay: int = 1) -> None:
         connected = False
@@ -232,7 +224,7 @@ class DiscordNotifier:
     def send_discord_message(self, message) -> None:
         message = {"content": message}
         response = requests.post(self.webhook_url, json=message)
-        if response.status_code == 204:
+        if response.status_code == 204 or response.status_code == 200:
             self.logger.info(TXT_DISCORD_MSG_SENT)
         else:
             self.logger.error(f"Failed to send message: {response.status_code}")
@@ -242,7 +234,7 @@ class DiscordNotifier:
             response = requests.post(
                 self.webhook_url, files={"file": file}, data={"content": message}
             )
-            if response.status_code == 204:
+            if response.status_code == 204 or response.status_code == 200:
                 self.logger.info(TXT_DISCORD_MSG_SENT)
             else:
                 self.logger.error(f"Failed to send image: {response.status_code}")
@@ -260,7 +252,6 @@ class RecordingApp:
             key_path="/home/user/.ssh/id_rsa.dat",
         )
         self.discord_notifier = DiscordNotifier(logger)
-        self.gui_queue: queue.Queue = queue.Queue()
         self.root, self.label = self.create_status_window()
         self.last_status_message = TXT_GUI_WAITING
         self.last_status_color = "black"
@@ -275,7 +266,7 @@ class RecordingApp:
         self.start_paused_time = None
         self.end_paused_time = None
         self.paused_time: int = 0
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
@@ -317,57 +308,40 @@ class RecordingApp:
         )
         self.update_state(self.previous_state)
 
-    def process_gui_queue(self) -> None:
-        while not self.gui_queue.empty():
-            task = self.gui_queue.get()
-            if task[0] == "update_gui_message":
-                self.update_gui_message(task[1], task[2])
-            elif task[0] == "upload_video":
-                self.upload_video()
-            elif task[0] == "launch_timer":
-                self.launch_timer()
-        self.root.after(100, self.process_gui_queue)
-
-    def update_upload_message_with_loading(self):
-        loading_thread = threading.Thread(target=self.loading_animation)
-        loading_thread.start()
-
     def loading_animation(self):
-        loading_message = TXT_GUI_FINISH_RECORDING
-        dots = ''
-
-        def update_loading_message():
-            nonlocal dots
-            if self.state == "ENREGISTREMENT":
-                dots += '.'
-                if len(dots) > 3:
-                    dots = ''
-                self.gui_queue.put(("update_gui_message", loading_message + dots, "red"))
-                self.root.after(500, update_loading_message)  # Schedule next update
-
-        update_loading_message()
+        dots : str = ""
+        while not self.uploaded:
+            dots += '.'
+            if len(dots) > 3:
+                dots = ''
+            self.update_gui_message(TXT_GUI_FINISH_RECORDING + dots, "red")
+            time.sleep(0.5)
 
 
     def upload_video(self) -> None:
-        try:
+        self.uploaded = False
+        def myfunc():
             video_file = self.obs_recorder.find_latest_video()
             if not video_file:
                 self.logger.error("No video file found for upload")
                 return
 
-            self.update_upload_message_with_loading()
 
             file_name = os.path.basename(video_file).replace(" ", "_")
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE)
+            self.uploaded = True
+
+        try:
+            self.executor.submit(myfunc)
+            self.loading_animation()
+
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
             self.update_gui_message("An unexpected error occurred", "red")
-        finally:
-            self.obs_recorder.disconnect()
-            self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
+
 
 
     def on_key_event(self, event: keyboard.KeyboardEvent):
@@ -377,18 +351,16 @@ class RecordingApp:
                 if self.state == "EN_ATTENTE":
                     self.update_state("EN_COURS")
                     self.start_time = time.time()
-                    self.gui_queue.put(("launch_timer",))
+                    self.executor.submit(self.launch_timer)
 
                     self.obs_recorder.start_recording()
-                    self.obs_recorder.get_video_status()
 
                 elif self.state == "EN_COURS":
                     self.update_state("PAUSE")
                     self.start_paused_time = time.time()
-                    self.gui_queue.put(("update_gui_message", TXT_GUI_PAUSE, "red"))
+                    self.update_gui_message(TXT_GUI_PAUSE, "red")
                     self.capture_screenshot(message="Capture d'ecran lors de la mise en pause", show_gui=False)
                     self.obs_recorder.pause_recording()
-                    self.obs_recorder.get_video_status()
 
                 elif self.state == "PAUSE":
                     self.update_state("EN_COURS")
@@ -398,9 +370,8 @@ class RecordingApp:
                     )
                     self.start_paused_time = None
                     self.end_paused_time = None
-                    self.gui_queue.put(("launch_timer",))
+                    self.executor.submit(self.launch_timer)
                     self.obs_recorder.resume_recording()
-                    self.obs_recorder.get_video_status()
 
                 elif self.state == "ENREGISTREMENT":
                     self.logger.info(
@@ -417,15 +388,8 @@ class RecordingApp:
             elif event.name == "é" or event.name == "2":
                 if self.state == "PAUSE" or self.state == "EN_COURS":
                     self.update_state("ENREGISTREMENT")
-                    # self.gui_queue.put(
-                    #     (
-                    #         "update_gui_message",
-                    #         TXT_GUI_FINISH_RECORDING,
-                    #         "red",
-                    #     )
-                    # )     
                     self.obs_recorder.stop_recording()
-                    self.gui_queue.put(("upload_video",))
+                    self.upload_video()
                     self.capture_screenshot(
                         message="Etat du tableau à la fin du recording", show_gui=False
                     )
@@ -435,7 +399,7 @@ class RecordingApp:
                     self.end_paused_time = None
                     self.paused_time: int = 0
                     self.update_state("EN_ATTENTE")
-                    self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
+                    self.update_gui_message(TXT_GUI_WAITING, "black")
 
                 elif self.state == "ENREGISTREMENT":
                     self.logger.info(
@@ -460,7 +424,7 @@ class RecordingApp:
                     self.restore_previous_status()
 
                     if self.state == "EN_COURS" or self.state == "PAUSE":
-                        self.gui_queue.put(("launch_timer",))
+                        self.executor.submit(self.launch_timer)
 
                 elif self.state == "SCREENSHOT":
                     self.logger.info(
@@ -475,7 +439,7 @@ class RecordingApp:
                 self.label.config(text=f"{count}", fg="red")
                 self.root.update()
                 time.sleep(1)
-            self.gui_queue.put(("update_gui_message", "SCREENSHOT", "green"))
+            self.update_gui_message("SCREENSHOT", "green")
 
         screenshot_path = os.path.join(
             self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
@@ -500,7 +464,6 @@ class RecordingApp:
             self.discord_notifier.send_discord_image, image_file, message
         )
     def run(self) -> None:
-        self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
 
     def launch_timer(self) -> None:
