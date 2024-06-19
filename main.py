@@ -348,8 +348,6 @@ class RecordingApp:
 
             self.update_upload_message_with_loading()
 
-            time.sleep(5)  # Simulating upload process
-
             file_name = os.path.basename(video_file).replace(" ", "_")
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
@@ -410,13 +408,13 @@ class RecordingApp:
             elif event.name == "é" or event.name == "2":
                 if self.state == "PAUSE" or self.state == "EN_COURS":
                     self.update_state("ENREGISTREMENT")
-                    self.gui_queue.put(
-                        (
-                            "update_gui_message",
-                            TXT_GUI_FINISH_RECORDING,
-                            "red",
-                        )
-                    )     
+                    # self.gui_queue.put(
+                    #     (
+                    #         "update_gui_message",
+                    #         TXT_GUI_FINISH_RECORDING,
+                    #         "red",
+                    #     )
+                    # )     
                     self.obs_recorder.stop_recording()
                     self.gui_queue.put(("upload_video",))
                     self.capture_screenshot(
