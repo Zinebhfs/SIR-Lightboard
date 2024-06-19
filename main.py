@@ -185,6 +185,7 @@ class FTPUploader:
         self.passphrase = passphrase
         self.logger = logger
         self.sftp = None
+        self.connect()
 
     def connect(self):
         try:
