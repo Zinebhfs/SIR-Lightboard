@@ -1,9 +1,5 @@
 # ENVIRONMENT PACKET
 python-dotenv==1.0.1
-# DISCORD PACKETS
-discord==2.3.2
-discord.py==2.3.2
-nest-asyncio==1.6.0
 # TKINTER PACKET
 tk==0.1.0
 # EQUIPMENTS PACKET
@@ -17,5 +13,5 @@ pyopenssl
 pyasn1
 # Screenshot for windows
 pyautogui
-
+# Sftp
 paramiko
