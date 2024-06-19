@@ -332,12 +332,18 @@ class RecordingApp:
     def loading_animation(self):
         loading_message = TXT_GUI_FINISH_RECORDING
         dots = ''
-        while self.state == "ENREGISTREMENT":
-            dots += '.'
-            if len(dots) > 3:
-                dots = ''
-            self.gui_queue.put(("update_gui_message", loading_message + dots, "red"))
-            time.sleep(0.5)
+
+        def update_loading_message():
+            nonlocal dots
+            if self.state == "ENREGISTREMENT":
+                dots += '.'
+                if len(dots) > 3:
+                    dots = ''
+                self.gui_queue.put(("update_gui_message", loading_message + dots, "red"))
+                self.root.after(500, update_loading_message)  # Schedule next update
+
+        update_loading_message()
+
 
     def upload_video(self) -> None:
         try:
