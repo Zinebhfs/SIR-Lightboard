@@ -15,6 +15,7 @@ import subprocess
 import platform
 import pyautogui
 import requests
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
