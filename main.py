@@ -17,6 +17,7 @@ import pyautogui
 import requests
 import asyncio
 import threading
+import concurrent.futures
 
 # Load environment variables from .env file
 load_dotenv()
@@ -58,7 +59,6 @@ TXT_GUI_UNEXPECTED_ERROR = "An unexpected error occurred"
 TXT_FTP_SERVER_PATH = os.getenv("FTP_SERVER_PATH")
 TXT_FTP_SERVER_USER = os.getenv("FTP_SERVER_USER")
 TXT_FTP_SERVER_PASS_PHRASE = os.getenv("FTP_SERVER_PASS_PHRASE")
-
 nest_asyncio.apply()
 
 
@@ -275,9 +275,12 @@ class RecordingApp:
         self.start_paused_time = None
         self.end_paused_time = None
         self.paused_time: int = 0
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
         self.capture_screenshot(message="Etat du tableau au démarrage", show_gui=False)
+        
 
     def update_state(self, new_state: str):
         self.logger.info(f"{self.state} -> {new_state}")
@@ -493,8 +496,9 @@ class RecordingApp:
             self.logger.error("No image file found for upload")
             return
 
-        self.discord_notifier.send_discord_image(image_file, message)
-
+        self.executor.submit(
+            self.discord_notifier.send_discord_image, image_file, message
+        )
     def run(self) -> None:
         self.root.after(100, self.process_gui_queue)
         self.root.mainloop()
