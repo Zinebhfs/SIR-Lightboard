@@ -7,7 +7,6 @@ import paramiko
 from obswebsocket import obsws, requests as obs_requests
 from dotenv import load_dotenv
 from tkinter import Tk, Label
-import nest_asyncio
 import time
 import subprocess
 import platform
@@ -55,7 +54,6 @@ TXT_GUI_UNEXPECTED_ERROR = "An unexpected error occurred"
 TXT_FTP_SERVER_PATH = os.getenv("FTP_SERVER_PATH")
 TXT_FTP_SERVER_USER = os.getenv("FTP_SERVER_USER")
 TXT_FTP_SERVER_PASS_PHRASE = os.getenv("FTP_SERVER_PASS_PHRASE")
-nest_asyncio.apply()
 
 
 class Logger:
@@ -262,7 +260,7 @@ class RecordingApp:
         self.previous_status_color = self.last_status_color
         self.previous_state = "EN_ATTENTE"
         self.state = "EN_ATTENTE"  # Initialize the state
-        self.session_id : str = "0000"
+        self.session_id: str = "0000"
         self.elapsed_time: int = 0
         self.start_time = None
         self.start_paused_time = None
@@ -272,7 +270,10 @@ class RecordingApp:
 
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
-        self.capture_screenshot(message=f"{self.session_id}: Etat du tableau au démarrage de la solution", show_gui=False)
+        self.capture_screenshot(
+            message=f"{self.session_id}: Etat du tableau au démarrage de la solution",
+            show_gui=False,
+        )
 
     def update_state(self, new_state: str):
         self.logger.info(f"{self.state} -> {new_state}")
@@ -310,11 +311,11 @@ class RecordingApp:
         self.update_state(self.previous_state)
 
     def loading_animation(self):
-        dots : str = ""
+        dots: str = ""
         while not self.uploaded:
-            dots += '.'
+            dots += "."
             if len(dots) > 3:
-                dots = ''
+                dots = ""
             self.update_gui_message(TXT_GUI_FINISH_RECORDING + dots, "red")
             time.sleep(0.5)
 
@@ -350,7 +351,10 @@ class RecordingApp:
                     self.update_state("EN_COURS")
                     self.start_time = time.time()
                     self.session_id = str(int(time.time()))[6:]
-                    self.capture_screenshot(message=f"{self.session_id}: Etat du tableau au démarrage de la vidéo", show_gui=False)
+                    self.capture_screenshot(
+                        message=f"{self.session_id}: Etat du tableau au démarrage de la vidéo",
+                        show_gui=False,
+                    )
                     self.executor.submit(self.launch_timer)
 
                     self.obs_recorder.start_recording()
@@ -359,7 +363,10 @@ class RecordingApp:
                     self.update_state("PAUSE")
                     self.start_paused_time = time.time()
                     self.update_gui_message(TXT_GUI_PAUSE, "red")
-                    self.capture_screenshot(message=f"{self.session_id}: Capture d'ecran lors de la mise en pause", show_gui=False)
+                    self.capture_screenshot(
+                        message=f"{self.session_id}: Capture d'ecran lors de la mise en pause",
+                        show_gui=False,
+                    )
                     self.obs_recorder.pause_recording()
 
                 elif self.state == "PAUSE":
@@ -391,7 +398,8 @@ class RecordingApp:
                     self.obs_recorder.stop_recording()
                     self.upload_video()
                     self.capture_screenshot(
-                        message=f"{self.session_id}: Etat du tableau à la fin du recording", show_gui=False
+                        message=f"{self.session_id}: Etat du tableau à la fin du recording",
+                        show_gui=False,
                     )
                     self.elapsed_time: int = 0
                     self.start_time = None
@@ -419,7 +427,8 @@ class RecordingApp:
                 if self.state != "SCREENSHOT":
                     self.update_state("SCREENSHOT")
                     self.capture_screenshot(
-                        message=f"{self.session_id}: Capture d'ecran de la vidéo en cours", show_gui=True
+                        message=f"{self.session_id}: Capture d'ecran de la vidéo en cours",
+                        show_gui=True,
                     )
                     self.restore_previous_status()
 
@@ -442,7 +451,8 @@ class RecordingApp:
             self.update_gui_message("SCREENSHOT", "green")
 
         screenshot_path = os.path.join(
-            self.obs_recorder.video_path, f"screenshot_{self.session_id}_{int(time.time())}.png"
+            self.obs_recorder.video_path,
+            f"screenshot_{self.session_id}_{int(time.time())}.png",
         )
 
         # Capture screenshot based on the operating system
