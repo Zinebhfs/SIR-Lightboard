@@ -16,6 +16,7 @@ import platform
 import pyautogui
 import requests
 import asyncio
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -50,7 +51,7 @@ TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
 TXT_GUI_FINISH_RECORDING = "UPLOAD"
 TXT_GUI_ERROR = "ERROR"
-TXT_GUI_PAUSE = "PAUSE"
+TXT_GUI_PAUSE = "⏸️ PAUSE"
 TXT_GUI_TIMER = "00:00"
 TXT_GUI_UNEXPECTED_ERROR = "An unexpected error occurred"
 
@@ -324,6 +325,20 @@ class RecordingApp:
                 self.launch_timer()
         self.root.after(100, self.process_gui_queue)
 
+    def update_upload_message_with_loading(self):
+        loading_thread = threading.Thread(target=self.loading_animation)
+        loading_thread.start()
+
+    def loading_animation(self):
+        loading_message = TXT_GUI_FINISH_RECORDING
+        dots = ''
+        while self.state == "ENREGISTREMENT":
+            dots += '.'
+            if len(dots) > 3:
+                dots = ''
+            self.gui_queue.put(("update_gui_message", loading_message + dots, "red"))
+            time.sleep(0.5)
+
     def upload_video(self) -> None:
         try:
             video_file = self.obs_recorder.find_latest_video()
@@ -331,7 +346,9 @@ class RecordingApp:
                 self.logger.error("No video file found for upload")
                 return
 
-            time.sleep(5)  # Wait for the video to be fully written to disk
+            self.update_upload_message_with_loading()
+
+            time.sleep(5)  # Simulating upload process
 
             file_name = os.path.basename(video_file).replace(" ", "_")
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
@@ -341,9 +358,10 @@ class RecordingApp:
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
             self.update_gui_message("An unexpected error occurred", "red")
-            time.sleep(5)
+        finally:
             self.obs_recorder.disconnect()
-            exit()
+            self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
+
 
     def on_key_event(self, event: keyboard.KeyboardEvent):
         if event.event_type == keyboard.KEY_DOWN:
@@ -360,7 +378,8 @@ class RecordingApp:
                 elif self.state == "EN_COURS":
                     self.update_state("PAUSE")
                     self.start_paused_time = time.time()
-                    self.gui_queue.put(("launch_timer",))
+                    self.gui_queue.put(("update_gui_message", TXT_GUI_PAUSE, "red"))
+                    self.capture_screenshot(message="Capture d'ecran lors de la mise en pause", show_gui=False)
                     self.obs_recorder.pause_recording()
                     self.obs_recorder.get_video_status()
 
@@ -397,11 +416,9 @@ class RecordingApp:
                             TXT_GUI_FINISH_RECORDING,
                             "red",
                         )
-                    )
+                    )     
                     self.obs_recorder.stop_recording()
                     self.gui_queue.put(("upload_video",))
-
-                    time.sleep(3)
                     self.capture_screenshot(
                         message="Etat du tableau à la fin du recording", show_gui=False
                     )
@@ -453,7 +470,6 @@ class RecordingApp:
                 time.sleep(1)
             self.gui_queue.put(("update_gui_message", "SCREENSHOT", "green"))
 
-        time.sleep(0.5)
         screenshot_path = os.path.join(
             self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
         )
