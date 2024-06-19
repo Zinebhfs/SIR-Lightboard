@@ -246,7 +246,8 @@ class RecordingApp:
             server=TXT_FTP_SERVER_PATH,
             username=TXT_FTP_SERVER_USER,
             passphrase=TXT_FTP_SERVER_PASS_PHRASE,
-            logger=logger
+            logger=logger,
+            key_path="/home/user/.ssh/id_rsa.dat"
         )
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
