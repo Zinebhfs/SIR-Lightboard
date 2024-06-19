@@ -1,9 +1,6 @@
 import os
 import glob
-import pickle
 import keyboard
-import discord
-import asyncio
 import logging
 from typing import Optional, Tuple
 import logging
