@@ -178,7 +178,14 @@ class OBSRecorder:
 
 
 class FTPUploader:
-    def __init__(self, server: str, username: str, key_path: str, passphrase: str, logger: logging.Logger):
+    def __init__(
+        self,
+        server: str,
+        username: str,
+        key_path: str,
+        passphrase: str,
+        logger: logging.Logger,
+    ):
         self.server = server
         self.username = username
         self.key_path = key_path
@@ -189,7 +196,9 @@ class FTPUploader:
 
     def connect(self):
         try:
-            key = paramiko.RSAKey.from_private_key_file(self.key_path, password=self.passphrase)
+            key = paramiko.RSAKey.from_private_key_file(
+                self.key_path, password=self.passphrase
+            )
             transport = paramiko.Transport((self.server, 22))
             transport.connect(username=self.username, pkey=key)
             self.sftp = paramiko.SFTPClient.from_transport(transport)
@@ -213,6 +222,7 @@ class FTPUploader:
             self.logger.info("Disconnected from SFTP server")
         else:
             self.logger.warning("SFTP connection was not established")
+
 
 class DiscordNotifier:
     def __init__(self, logger: logging.Logger):
@@ -248,7 +258,7 @@ class RecordingApp:
             username=TXT_FTP_SERVER_USER,
             passphrase=TXT_FTP_SERVER_PASS_PHRASE,
             logger=logger,
-            key_path="/home/user/.ssh/id_rsa.dat"
+            key_path="/home/user/.ssh/id_rsa.dat",
         )
         self.discord_notifier = DiscordNotifier(logger)
         self.gui_queue: queue.Queue = queue.Queue()
@@ -341,7 +351,6 @@ class RecordingApp:
         if event.event_type == keyboard.KEY_DOWN:
             # Action : ⏯️
             if event.name == '"' or event.name == "3":
-
                 if self.state == "EN_ATTENTE":
                     self.update_state("EN_COURS")
                     self.start_time = time.time()
@@ -374,13 +383,14 @@ class RecordingApp:
                         "Upload in progress, please wait for the video to be uploaded before taking another action"
                     )
                 elif self.state == "SCREENSHOT":
-                    self.logger.info("Screenshot in progress, pls wait before taking another action")
+                    self.logger.info(
+                        "Screenshot in progress, pls wait before taking another action"
+                    )
                 else:
                     self.logger.info(f"Unexpected action ⏯️ with state {self.state}")
 
             # Action : 🟥
             elif event.name == "é" or event.name == "2":
-                
                 if self.state == "PAUSE" or self.state == "EN_COURS":
                     self.update_state("ENREGISTREMENT")
                     self.gui_queue.put(
@@ -404,18 +414,19 @@ class RecordingApp:
                     self.paused_time: int = 0
                     self.update_state("EN_ATTENTE")
                     self.gui_queue.put(("update_gui_message", TXT_GUI_WAITING, "black"))
-                    
+
                 elif self.state == "ENREGISTREMENT":
                     self.logger.info(
                         "Recording already stopped, please wait for upload"
                     )
 
                 elif self.state == "SCREENSHOT":
-                    self.logger.info("Screenshot in progress, pls wait before taking another action")
+                    self.logger.info(
+                        "Screenshot in progress, pls wait before taking another action"
+                    )
 
                 else:
                     self.logger.info(f"Unexpected action 🟥 with state {self.state}")
-            
 
             # Action : 📷
             elif event.name == "&" or event.name == "1":
@@ -425,10 +436,10 @@ class RecordingApp:
                         message="Capture d'ecran de la vidéo en cours", show_gui=True
                     )
                     self.restore_previous_status()
-                    
+
                     if self.state == "EN_COURS" or self.state == "PAUSE":
                         self.gui_queue.put(("launch_timer",))
-                        
+
                 elif self.state == "SCREENSHOT":
                     self.logger.info(
                         "Screenshot already in progress, pls wait before taking another one"
@@ -437,7 +448,6 @@ class RecordingApp:
                     self.logger.info(f"Unexpected action 📷 with state {self.state}")
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
-
         if show_gui:
             for count in reversed(range(1, 4)):
                 self.label.config(text=f"{count}", fg="red")
