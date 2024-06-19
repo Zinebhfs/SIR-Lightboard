@@ -42,7 +42,7 @@ TXT_OBS_LATEST_VIDEO = "Latest video found: {video}"
 TXT_DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 TXT_DISCORD_INIT = "Discord notifier initialized"
 TXT_DISCORD_MSG_SENT = "Message sent to Discord channel via webhook"
-TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible sur https://videos.insa-lyon.fr/record/claim_record/"
+TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible sur https://videos.insa-lyon.fr/record/claim_record/ dans quelques minutes"
 TXT_GUI_WAITING = "EN ATTENTE"
 TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
@@ -262,7 +262,7 @@ class RecordingApp:
         self.previous_status_color = self.last_status_color
         self.previous_state = "EN_ATTENTE"
         self.state = "EN_ATTENTE"  # Initialize the state
-
+        self.session_id : str = "0000"
         self.elapsed_time: int = 0
         self.start_time = None
         self.start_paused_time = None
@@ -272,7 +272,7 @@ class RecordingApp:
 
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
-        self.capture_screenshot(message="Etat du tableau au démarrage", show_gui=False)
+        self.capture_screenshot(message=f"{self.session_id}: Etat du tableau au démarrage de la solution", show_gui=False)
 
     def update_state(self, new_state: str):
         self.logger.info(f"{self.state} -> {new_state}")
@@ -349,6 +349,8 @@ class RecordingApp:
                 if self.state == "EN_ATTENTE":
                     self.update_state("EN_COURS")
                     self.start_time = time.time()
+                    self.session_id = str(int(time.time()))[6:]
+                    self.capture_screenshot(message=f"{self.session_id}: Etat du tableau au démarrage de la vidéo", show_gui=False)
                     self.executor.submit(self.launch_timer)
 
                     self.obs_recorder.start_recording()
@@ -357,7 +359,7 @@ class RecordingApp:
                     self.update_state("PAUSE")
                     self.start_paused_time = time.time()
                     self.update_gui_message(TXT_GUI_PAUSE, "red")
-                    self.capture_screenshot(message="Capture d'ecran lors de la mise en pause", show_gui=False)
+                    self.capture_screenshot(message=f"{self.session_id}: Capture d'ecran lors de la mise en pause", show_gui=False)
                     self.obs_recorder.pause_recording()
 
                 elif self.state == "PAUSE":
@@ -389,7 +391,7 @@ class RecordingApp:
                     self.obs_recorder.stop_recording()
                     self.upload_video()
                     self.capture_screenshot(
-                        message="Etat du tableau à la fin du recording", show_gui=False
+                        message=f"{self.session_id}: Etat du tableau à la fin du recording", show_gui=False
                     )
                     self.elapsed_time: int = 0
                     self.start_time = None
@@ -417,7 +419,7 @@ class RecordingApp:
                 if self.state != "SCREENSHOT":
                     self.update_state("SCREENSHOT")
                     self.capture_screenshot(
-                        message="Capture d'ecran de la vidéo en cours", show_gui=True
+                        message=f"{self.session_id}: Capture d'ecran de la vidéo en cours", show_gui=True
                     )
                     self.restore_previous_status()
 
@@ -440,7 +442,7 @@ class RecordingApp:
             self.update_gui_message("SCREENSHOT", "green")
 
         screenshot_path = os.path.join(
-            self.obs_recorder.video_path, f"screenshot_{int(time.time())}.png"
+            self.obs_recorder.video_path, f"screenshot_{self.session_id}_{int(time.time())}.png"
         )
 
         # Capture screenshot based on the operating system
