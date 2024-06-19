@@ -382,8 +382,6 @@ class RecordingApp:
                 
                 if self.state == "PAUSE" or self.state == "EN_COURS":
                     self.update_state("ENREGISTREMENT")
-                    self.obs_recorder.stop_recording()
-                    self.gui_queue.put(("upload_video",))
                     self.gui_queue.put(
                         (
                             "update_gui_message",
@@ -391,6 +389,9 @@ class RecordingApp:
                             "red",
                         )
                     )
+                    self.obs_recorder.stop_recording()
+                    self.gui_queue.put(("upload_video",))
+
                     time.sleep(3)
                     self.capture_screenshot(
                         message="Etat du tableau à la fin du recording", show_gui=False
