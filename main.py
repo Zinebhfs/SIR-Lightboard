@@ -148,7 +148,7 @@ class OBSRecorder:
         self.logger.info(TXT_OBS_DISCONNECTED)
 
     def find_latest_video(self) -> Optional[str]:
-        video_files = glob.glob(os.path.join(self.video_path, "*.mkv"))
+        video_files = glob.glob(os.path.join(self.video_path, "*.mp4"))
         if not video_files:
             return None
         latest_video = max(video_files, key=os.path.getmtime)
