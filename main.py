@@ -13,6 +13,7 @@ import platform
 import pyautogui
 import requests
 import concurrent.futures
+from scp import SCPClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -148,7 +149,7 @@ class OBSRecorder:
         self.logger.info(TXT_OBS_DISCONNECTED)
 
     def find_latest_video(self) -> Optional[str]:
-        video_files = glob.glob(os.path.join(self.video_path, "*.mp4"))
+        video_files = glob.glob(os.path.join(self.video_path, "*.mkv"))
         if not video_files:
             return None
         latest_video = max(video_files, key=os.path.getmtime)
@@ -162,6 +163,58 @@ class OBSRecorder:
         latest_image = max(image_files, key=os.path.getmtime)
         self.logger.info(f"Latest image found: {latest_image}")
         return latest_image
+
+
+class SCPUploader:
+    def __init__(
+        self,
+        server: str,
+        username: str,
+        key_path: str,
+        passphrase: str,
+        logger: logging.Logger,
+    ):
+        self.server = server
+        self.username = username
+        self.key_path = key_path
+        self.passphrase = passphrase
+        self.logger = logger
+        self.ssh = None
+        self.scp = None
+        self.connect()
+
+    def connect(self):
+        try:
+            key = paramiko.RSAKey.from_private_key_file(
+                self.key_path, password=self.passphrase
+            )
+            self.ssh = paramiko.SSHClient()
+            self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh.connect(self.server, username=self.username, pkey=key)
+            self.scp = SCPClient(self.ssh.get_transport())
+            self.logger.info("Connected to server via SCP")
+        except Exception as e:
+            self.logger.error(f"Failed to connect to server: {e}")
+
+    def upload_file(self, local_path: str, remote_path: str):
+        if not self.scp:
+            self.logger.error("SCP connection not established")
+            return
+        try:
+            self.scp.put(local_path, remote_path)
+            self.logger.info(f"Uploaded {local_path} to {remote_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to upload file: {e}")
+
+    def disconnect(self):
+        if self.scp:
+            self.scp.close()
+            self.logger.info("Disconnected from SCP server")
+        if self.ssh:
+            self.ssh.close()
+            self.logger.info("SSH session closed")
+        else:
+            self.logger.warning("SCP/SSH connection was not established")
 
 
 class FTPUploader:
@@ -245,6 +298,13 @@ class RecordingApp:
         self.ftp_uploader = FTPUploader(
             server=TXT_FTP_SERVER_PATH,
             username=TXT_FTP_SERVER_USER,
+            passphrase=TXT_FTP_SERVER_PASS_PHRASE,
+            logger=logger,
+            key_path="/home/user/.ssh/id_rsa.dat",
+        )
+        self.scp_uploader = SCPUploader(
+            server=r"wired.citi.insa-lyon.fr",
+            username=r"root",
             passphrase=TXT_FTP_SERVER_PASS_PHRASE,
             logger=logger,
             key_path="/home/user/.ssh/id_rsa.dat",
