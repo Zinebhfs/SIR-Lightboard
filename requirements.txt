@@ -16,3 +16,5 @@ pyautogui
 # Sftp
 paramiko
 nest-asyncio
+# Scp
+scp
