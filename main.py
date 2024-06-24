@@ -304,7 +304,7 @@ class RecordingApp:
         )
         self.scp_uploader = SCPUploader(
             server=r"wired.citi.insa-lyon.fr",
-            username=r"root",
+            username=r"lightboard",
             passphrase=TXT_FTP_SERVER_PASS_PHRASE,
             logger=logger,
             key_path="/home/user/.ssh/id_rsa.dat",
