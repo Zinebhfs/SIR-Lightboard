@@ -1,3 +1,16 @@
+Variables d'environnement:
+```python
+TXT_YT_CLIENT_SECRETS_FILE = os.getenv("CLIENT_SECRETS_FILE", "client_secret.json")
+TXT_YT_TOKEN_FILE = os.getenv("TOKEN_FILE", "token.pkl")
+TXT_YT_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+TXT_YT_CLIENT_INIT = "YouTube client initialized"
+TXT_YT_CREDENTIALS_LOADED = "Loaded credentials from token file"
+TXT_YT_TOKEN_NOT_FOUND = "Token file not found, creating new credentials"
+TXT_YT_CREDENTIALS_SAVED = "New credentials saved to token file"
+```
+
+
+Code
 ```python
 class YouTubeUploader:
     def __init__(self, logger: logging.Logger):
