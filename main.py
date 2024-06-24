@@ -330,6 +330,9 @@ class RecordingApp:
 
             file_name = os.path.basename(video_file).replace(" ", "_")
             self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
+            self.scp_uploader.upload_file(
+                video_file, f"/opt/SIR-Lightboard/download/{file_name}"
+            )
             video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE)
