@@ -328,6 +328,7 @@ class RecordingApp:
         self.paused_time: int = 0
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
         self.last_screenshot_time = 0
+        pyautogui.moveTo(1919, 1079)
 
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
@@ -567,6 +568,5 @@ class RecordingApp:
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
     app_logger.info(TXT_LOGGER_STARTING_APP)
-    pyautogui.moveTo(1919, 1079)
     app = RecordingApp(app_logger)
     app.run()
