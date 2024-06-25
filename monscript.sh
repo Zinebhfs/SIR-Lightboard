@@ -8,6 +8,9 @@ sudo mkdir -p /mnt/nvme0n1
 sudo mount /dev/nvme0n1 /mnt/nvme0n1
 sudo chown -R user /mnt/nvme0n1
 
+cd /mnt/nvme0n1
+sudo find -type f -mtime +7 -exec rm -rf {} \;
+
 # Move into the repository SIR-Lightboard
 cd /home/user/SIR-Lightboard
 
