@@ -565,6 +565,6 @@ class RecordingApp:
 if __name__ == "__main__":
     app_logger = Logger(__name__).get_logger()
     app_logger.info(TXT_LOGGER_STARTING_APP)
+    pyautogui.moveTo(1920, 1080)
     app = RecordingApp(app_logger)
     app.run()
-    pyautogui.moveTo(1920, 1080)
