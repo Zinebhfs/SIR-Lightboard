@@ -42,7 +42,7 @@ TXT_OBS_LATEST_VIDEO = "Latest video found: {video}"
 TXT_DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 TXT_DISCORD_INIT = "Discord notifier initialized"
 TXT_DISCORD_MSG_SENT = "Message sent to Discord channel via webhook"
-TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible sur https://videos.insa-lyon.fr/record/claim_record/ dans quelques minutes"
+TXT_DISCORD_MSG_TEMPLATE = "Votre vidéo est accessible sur {} dans quelques minutes"
 TXT_GUI_WAITING = "EN ATTENTE"
 TXT_GUI_IN_PROGRESS = "EN COURS"
 TXT_GUI_COMPLETED = "TERMINÉ"
@@ -217,51 +217,51 @@ class SCPUploader:
             self.logger.warning("SCP/SSH connection was not established")
 
 
-class FTPUploader:
-    def __init__(
-        self,
-        server: str,
-        username: str,
-        key_path: str,
-        passphrase: str,
-        logger: logging.Logger,
-    ):
-        self.server = server
-        self.username = username
-        self.key_path = key_path
-        self.passphrase = passphrase
-        self.logger = logger
-        self.sftp = None
-        self.connect()
+# class FTPUploader:
+#     def __init__(
+#         self,
+#         server: str,
+#         username: str,
+#         key_path: str,
+#         passphrase: str,
+#         logger: logging.Logger,
+#     ):
+#         self.server = server
+#         self.username = username
+#         self.key_path = key_path
+#         self.passphrase = passphrase
+#         self.logger = logger
+#         self.sftp = None
+#         self.connect()
 
-    def connect(self):
-        try:
-            key = paramiko.RSAKey.from_private_key_file(
-                self.key_path, password=self.passphrase
-            )
-            transport = paramiko.Transport((self.server, 22))
-            transport.connect(username=self.username, pkey=key)
-            self.sftp = paramiko.SFTPClient.from_transport(transport)
-            self.logger.info("Connected to SFTP server")
-        except Exception as e:
-            self.logger.error(f"Failed to connect to SFTP server: {e}")
+#     def connect(self):
+#         try:
+#             key = paramiko.RSAKey.from_private_key_file(
+#                 self.key_path, password=self.passphrase
+#             )
+#             transport = paramiko.Transport((self.server, 22))
+#             transport.connect(username=self.username, pkey=key)
+#             self.sftp = paramiko.SFTPClient.from_transport(transport)
+#             self.logger.info("Connected to SFTP server")
+#         except Exception as e:
+#             self.logger.error(f"Failed to connect to SFTP server: {e}")
 
-    def upload_file(self, local_path: str, remote_path: str):
-        if not self.sftp:
-            self.logger.error("SFTP connection not established")
-            return
-        try:
-            self.sftp.put(local_path, remote_path)
-            self.logger.info(f"Uploaded {local_path} to {remote_path}")
-        except Exception as e:
-            self.logger.error(f"Failed to upload file: {e}")
+#     def upload_file(self, local_path: str, remote_path: str):
+#         if not self.sftp:
+#             self.logger.error("SFTP connection not established")
+#             return
+#         try:
+#             self.sftp.put(local_path, remote_path)
+#             self.logger.info(f"Uploaded {local_path} to {remote_path}")
+#         except Exception as e:
+#             self.logger.error(f"Failed to upload file: {e}")
 
-    def disconnect(self):
-        if self.sftp:
-            self.sftp.close()
-            self.logger.info("Disconnected from SFTP server")
-        else:
-            self.logger.warning("SFTP connection was not established")
+#     def disconnect(self):
+#         if self.sftp:
+#             self.sftp.close()
+#             self.logger.info("Disconnected from SFTP server")
+#         else:
+#             self.logger.warning("SFTP connection was not established")
 
 
 class DiscordNotifier:
@@ -295,13 +295,13 @@ class RecordingApp:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
         self.obs_recorder = OBSRecorder(logger)
-        self.ftp_uploader = FTPUploader(
-            server=TXT_FTP_SERVER_PATH,
-            username=TXT_FTP_SERVER_USER,
-            passphrase=TXT_FTP_SERVER_PASS_PHRASE,
-            logger=logger,
-            key_path="/home/user/.ssh/id_rsa.dat",
-        )
+        # self.ftp_uploader = FTPUploader(
+        #     server=TXT_FTP_SERVER_PATH,
+        #     username=TXT_FTP_SERVER_USER,
+        #     passphrase=TXT_FTP_SERVER_PASS_PHRASE,
+        #     logger=logger,
+        #     key_path="/home/user/.ssh/id_rsa.dat",
+        # )
         self.scp_uploader = SCPUploader(
             server=r"wired.citi.insa-lyon.fr",
             username=r"lightboard",
@@ -389,13 +389,14 @@ class RecordingApp:
                 return
 
             file_name = os.path.basename(video_file).replace(" ", "_")
-            self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
+            # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             self.scp_uploader.upload_file(
                 video_file, f"/opt/SIR-Lightboard/download/{file_name}"
             )
-            video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
+            # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
+            video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name}.mp4"
             self.logger.info(f"Video URL: {video_url}")
-            self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE)
+            self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE.format(video_url))
             self.uploaded = True
 
         try:
