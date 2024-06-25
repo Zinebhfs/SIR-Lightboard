@@ -168,71 +168,107 @@ Sequence diagram of the main workflow of the script.
 ```mermaid
 sequenceDiagram
     participant User
-    participant LightboardApp
+    participant RecordingApp
+    participant Logger
     participant OBSRecorder
-    participant YouTubeUploader
+    participant SCPUploader
     participant DiscordNotifier
-    participant OBSWebSocket as OBS WebSocket
-    participant GoogleAPI as Google API
-    participant DiscordAPI as Discord API
-    participant GUI
     participant Keyboard as Keyboard Listener
     participant FileSystem
+    participant GUI
+    participant Executor
+    participant pyautogui
 
     Note right of User: Démarrage de l'application
 
-    User ->> LightboardApp: run()
-    LightboardApp ->> GUI: update_label("EN ATTENTE", "black")
-    LightboardApp ->> OBSRecorder: connect_with_retry()
-    OBSRecorder ->> OBSWebSocket: Connect
-    OBSWebSocket -->> OBSRecorder: Connected
-    OBSRecorder -->> LightboardApp: Connected
-    LightboardApp ->> YouTubeUploader: get_credentials()
-    YouTubeUploader ->> FileSystem: Load token file
-    FileSystem -->> YouTubeUploader: Token loaded
-    YouTubeUploader ->> GoogleAPI: Initialize client
-    GoogleAPI -->> YouTubeUploader: Client initialized
-    YouTubeUploader -->> LightboardApp: YouTube client ready
-    LightboardApp ->> DiscordNotifier: Initialize
-    DiscordNotifier ->> DiscordAPI: Initialize client
-    DiscordAPI -->> DiscordNotifier: Client initialized
-    DiscordNotifier -->> LightboardApp: Discord notifier ready
-    LightboardApp ->> Keyboard: on_press(event)
+    User ->> RecordingApp: run()
+    RecordingApp ->> Logger: Initialiser le logger
+    RecordingApp ->> OBSRecorder: Initialiser OBSRecorder
+    OBSRecorder ->> obsws: Connect
+    obsws -->> OBSRecorder: Connected
+    RecordingApp ->> SCPUploader: Initialiser SCPUploader
+    SCPUploader ->> paramiko: Connect to server
+    paramiko -->> SCPUploader: Connected
+    RecordingApp ->> DiscordNotifier: Initialiser DiscordNotifier
+    RecordingApp ->> GUI: Créer la fenêtre de statut
+    GUI ->> RecordingApp: Fenêtre créée
+    RecordingApp ->> Keyboard: Enregistrer le hook clavier
+    Keyboard -->> RecordingApp: Hook enregistré
+    RecordingApp ->> GUI: update_label("EN ATTENTE", "black")
 
-    Note right of User: Début de l'enregistrement
+    Note right of User: Interaction avec l'application
 
-    Keyboard ->> LightboardApp: Key "start" pressed
-    LightboardApp ->> LightboardApp: process_events()
-    LightboardApp ->> GUI: update_label("EN COURS", "green")
-    LightboardApp ->> OBSRecorder: start_recording()
-    OBSRecorder ->> OBSWebSocket: StartRecord
-    OBSWebSocket -->> OBSRecorder: Recording started
-    OBSRecorder -->> LightboardApp: Recording started
+    User ->> Keyboard: Appuyer sur la touche "start"
+    Keyboard -->> RecordingApp: Key event
+    RecordingApp ->> OBSRecorder: start_recording()
+    OBSRecorder ->> obsws: StartRecord
+    obsws -->> OBSRecorder: Recording started
+    OBSRecorder -->> RecordingApp: Recording started
+    RecordingApp ->> GUI: update_label("EN COURS", "green")
 
-    Note right of User: Fin de l'enregistrement
+    Note right of User: Pause de l'enregistrement
 
-    Keyboard ->> LightboardApp: Key "stop" pressed
-    LightboardApp ->> LightboardApp: process_events()
-    LightboardApp ->> OBSRecorder: stop_recording()
-    OBSRecorder ->> OBSWebSocket: StopRecord
-    OBSWebSocket -->> OBSRecorder: Recording stopped
-    OBSRecorder -->> LightboardApp: Recording stopped
-    LightboardApp ->> GUI: update_label("TERMINÉ", "red")
-    LightboardApp ->> OBSRecorder: find_latest_video()
+    User ->> Keyboard: Appuyer sur la touche "pause"
+    Keyboard -->> RecordingApp: Key event
+    RecordingApp ->> OBSRecorder: pause_recording()
+    OBSRecorder ->> obsws: PauseRecord
+    obsws -->> OBSRecorder: Recording paused
+    OBSRecorder -->> RecordingApp: Recording paused
+    RecordingApp ->> GUI: update_label("⏸️ PAUSE", "red")
+
+    Note right of User: Reprise de l'enregistrement
+
+    User ->> Keyboard: Appuyer sur la touche "resume"
+    Keyboard -->> RecordingApp: Key event
+    RecordingApp ->> OBSRecorder: resume_recording()
+    OBSRecorder ->> obsws: ResumeRecord
+    obsws -->> OBSRecorder: Recording resumed
+    OBSRecorder -->> RecordingApp: Recording resumed
+    RecordingApp ->> GUI: update_label("EN COURS", "green")
+
+    Note right of User: Capture d'écran
+
+    User ->> Keyboard: Appuyer sur la touche "screenshot"
+    Keyboard -->> RecordingApp: Key event
+    RecordingApp ->> GUI: update_label("SCREENSHOT", "green")
+    RecordingApp ->> pyautogui: screenshot()
+    pyautogui -->> FileSystem: Save screenshot
+    FileSystem -->> RecordingApp: Screenshot saved
+    RecordingApp ->> OBSRecorder: find_latest_image()
+    OBSRecorder ->> FileSystem: Get latest image file path
+    FileSystem -->> OBSRecorder: Latest image file path
+    OBSRecorder -->> RecordingApp: latest_image
+    RecordingApp ->> DiscordNotifier: send_discord_image(latest_image, message)
+    DiscordNotifier ->> requests: Send image
+    requests -->> DiscordNotifier: Image sent
+    DiscordNotifier -->> RecordingApp: Confirmation
+    RecordingApp ->> GUI: Restore previous status
+    GUI -->> RecordingApp: Status restored
+
+    Note right of User: Arrêt de l'enregistrement
+
+    User ->> Keyboard: Appuyer sur la touche "stop"
+    Keyboard -->> RecordingApp: Key event
+    RecordingApp ->> OBSRecorder: stop_recording()
+    OBSRecorder ->> obsws: StopRecord
+    obsws -->> OBSRecorder: Recording stopped
+    OBSRecorder -->> RecordingApp: Recording stopped
+    RecordingApp ->> GUI: update_label("TERMINÉ", "red")
+    RecordingApp ->> OBSRecorder: find_latest_video()
     OBSRecorder ->> FileSystem: Get latest video file path
     FileSystem -->> OBSRecorder: Latest video file path
-    OBSRecorder -->> LightboardApp: latest_video
-    LightboardApp ->> YouTubeUploader: upload_video(latest_video)
-    YouTubeUploader ->> GoogleAPI: Upload video
-    GoogleAPI -->> YouTubeUploader: video_url
-    YouTubeUploader -->> LightboardApp: video_id
-    LightboardApp ->> DiscordNotifier: notify(video_id)
-    DiscordNotifier ->> DiscordAPI: send_message(video_url)
-    DiscordAPI -->> DiscordNotifier: Confirmation
-    DiscordNotifier -->> LightboardApp: Confirmation
-    LightboardApp ->> GUI: update_label("Video uploaded", "blue")
+    OBSRecorder -->> RecordingApp: latest_video
+    RecordingApp ->> SCPUploader: upload_file(latest_video, remote_path)
+    SCPUploader ->> paramiko: SCP upload
+    paramiko -->> SCPUploader: Upload complete
+    SCPUploader -->> RecordingApp: File uploaded
+    RecordingApp ->> DiscordNotifier: send_discord_message(video_url)
+    DiscordNotifier ->> requests: Send message
+    requests -->> DiscordNotifier: Message sent
+    DiscordNotifier -->> RecordingApp: Confirmation
+    RecordingApp ->> GUI: update_label("UPLOAD", "red")
 
-    Note right of LightboardApp: Fin du processus
+    Note right of RecordingApp: Fin du processus
 ```
 
 # Build ISO
