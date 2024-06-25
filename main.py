@@ -493,7 +493,7 @@ class RecordingApp:
             # Action : 📷
             elif event.name == "&" or event.name == "1":
                 current_time = time.time()
-                if current_time - self.last_screenshot_time >= 3:  # 3-second cooldown
+                if current_time - self.last_screenshot_time >= 5:  # 3-second cooldown
                     if self.state != "SCREENSHOT":
                         self.update_state("SCREENSHOT")
                         self.capture_screenshot(
