@@ -388,7 +388,7 @@ class RecordingApp:
                 self.logger.error("No video file found for upload")
                 return
 
-            file_name = os.path.basename(video_file).replace(" ", "_")
+            file_name = os.path.basename(video_file).replace(" ", "_").replace(".mkv", "")
             # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             self.scp_uploader.upload_file(
                 video_file, f"/opt/SIR-Lightboard/download/{file_name}"
