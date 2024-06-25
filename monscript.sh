@@ -8,6 +8,7 @@ sudo mkdir -p /mnt/nvme0n1
 sudo mount /dev/nvme0n1 /mnt/nvme0n1
 sudo chown -R user /mnt/nvme0n1
 
+# Deleting videos older than 7 days
 cd /mnt/nvme0n1
 sudo find -type f -mtime +7 -exec rm -rf {} \;
 
