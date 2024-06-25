@@ -77,7 +77,7 @@
         },
         "sync": 0,
         "versioned_id": "pulse_input_capture",
-        "volume": 1.0
+        "volume": 0.25
     },
     "DesktopAudioDevice1": {
         "balance": 0.5,
