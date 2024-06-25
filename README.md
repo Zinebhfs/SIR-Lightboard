@@ -51,7 +51,7 @@ DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/yourwebhook"
 
 1. Set up the environment variables with appropriate values.
 2. Run the script using Python: `sudo python main.py`.
-3. Use keyboard shortcuts (with an US keyboard `1 or &` to start recording, `2 or é` to stop recording, `3 or "` to quit) to control the recording process.
+3. Use keyboard shortcuts (with an US keyboard `1 or &` to start recording, `2 or é` to stop recording, `3 or "` to take a screenshot) to control the recording process.
 4. The GUI status window will display the current status of the recording process.
 5. Once recording is stopped, the video will be uploaded to YouTube, and a notification will be sent to the specified Discord channel.
 
