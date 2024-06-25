@@ -399,7 +399,7 @@ class RecordingApp:
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             file_name_without_extension = os.path.splitext(file_name)[0]
             self.scp_uploader.upload_file(
-                f"/opt/SIR-Lightboard/empty.lock", f"/opt/SIR-Lightboard/download/{file_name_without_extension}.lock"
+                f"/home/user/SIR-Lightboard/empty.lock", f"/opt/SIR-Lightboard/download/{file_name_without_extension}.lock"
             )
             video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name_without_extension}.mp4"
             self.logger.info(f"Video URL: {video_url}")
