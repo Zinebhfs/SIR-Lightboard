@@ -515,7 +515,7 @@ class RecordingApp:
                         "Screenshot cooldown active, please wait before taking another one"
                     )
             else:
-                self.logger.info(f"Unexpected action 📷 with state {self.state}")
+                self.logger.info(f"Unexpected action {event.name} with state {self.state}")
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
         if show_gui:
