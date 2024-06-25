@@ -329,8 +329,6 @@ class RecordingApp:
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
         self.last_screenshot_time = 0
 
-
-
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
         self.capture_screenshot(
@@ -400,7 +398,9 @@ class RecordingApp:
             file_name_without_extension = os.path.splitext(file_name)[0]
             video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name_without_extension}.mp4"
             self.logger.info(f"Video URL: {video_url}")
-            self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE.format(video_url))
+            self.discord_notifier.send_discord_message(
+                TXT_DISCORD_MSG_TEMPLATE.format(video_url)
+            )
             self.uploaded = True
 
         try:
@@ -511,10 +511,12 @@ class RecordingApp:
                             "Screenshot already in progress, pls wait before taking another one"
                         )
                 else:
-                    self.logger.info("Screenshot cooldown active, please wait before taking another one")
+                    self.logger.info(
+                        "Screenshot cooldown active, please wait before taking another one"
+                    )
             else:
                 self.logger.info(f"Unexpected action 📷 with state {self.state}")
-    
+
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
         if show_gui:
             for count in reversed(range(1, 4)):
