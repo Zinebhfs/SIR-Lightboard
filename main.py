@@ -567,3 +567,4 @@ if __name__ == "__main__":
     app_logger.info(TXT_LOGGER_STARTING_APP)
     app = RecordingApp(app_logger)
     app.run()
+    pyautogui.moveTo(1920, 1080)
