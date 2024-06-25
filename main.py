@@ -327,6 +327,9 @@ class RecordingApp:
         self.end_paused_time = None
         self.paused_time: int = 0
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        self.last_screenshot_time = 0
+
+
 
         time.sleep(1)
         self.update_gui_message(self.last_status_message, self.last_status_color)
@@ -489,24 +492,29 @@ class RecordingApp:
 
             # Action : 📷
             elif event.name == "&" or event.name == "1":
-                if self.state != "SCREENSHOT":
-                    self.update_state("SCREENSHOT")
-                    self.capture_screenshot(
-                        message=f"{self.session_id}: Capture d'ecran de la vidéo en cours",
-                        show_gui=True,
-                    )
-                    self.restore_previous_status()
+                current_time = time.time()
+                if current_time - self.last_screenshot_time >= 3:  # 3-second cooldown
+                    if self.state != "SCREENSHOT":
+                        self.update_state("SCREENSHOT")
+                        self.capture_screenshot(
+                            message=f"{self.session_id}: Capture d'ecran de la vidéo en cours",
+                            show_gui=True,
+                        )
+                        self.restore_previous_status()
 
-                    if self.state == "EN_COURS" or self.state == "PAUSE":
-                        self.executor.submit(self.launch_timer)
+                        if self.state == "EN_COURS" or self.state == "PAUSE":
+                            self.executor.submit(self.launch_timer)
 
-                elif self.state == "SCREENSHOT":
-                    self.logger.info(
-                        "Screenshot already in progress, pls wait before taking another one"
-                    )
+                        self.last_screenshot_time = current_time
+                    elif self.state == "SCREENSHOT":
+                        self.logger.info(
+                            "Screenshot already in progress, pls wait before taking another one"
+                        )
                 else:
-                    self.logger.info(f"Unexpected action 📷 with state {self.state}")
-
+                    self.logger.info("Screenshot cooldown active, please wait before taking another one")
+            else:
+                self.logger.info(f"Unexpected action 📷 with state {self.state}")
+    
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
         if show_gui:
             for count in reversed(range(1, 4)):
