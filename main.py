@@ -394,7 +394,8 @@ class RecordingApp:
                 video_file, f"/opt/SIR-Lightboard/download/{file_name}"
             )
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
-            video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name.replace(".mkv", "")}.mp4"
+            file_name_without_extension = os.path.splitext(file_name)[0]
+            video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name_without_extension}.mp4"
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE.format(video_url))
             self.uploaded = True
