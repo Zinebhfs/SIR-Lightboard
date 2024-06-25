@@ -388,13 +388,13 @@ class RecordingApp:
                 self.logger.error("No video file found for upload")
                 return
 
-            file_name = os.path.basename(video_file).replace(" ", "_").replace(".mkv", "")
+            file_name = os.path.basename(video_file).replace(" ", "_")
             # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             self.scp_uploader.upload_file(
                 video_file, f"/opt/SIR-Lightboard/download/{file_name}"
             )
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
-            video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name}.mp4"
+            video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name.replace(".mkv", "")}.mp4"
             self.logger.info(f"Video URL: {video_url}")
             self.discord_notifier.send_discord_message(TXT_DISCORD_MSG_TEMPLATE.format(video_url))
             self.uploaded = True
