@@ -31,15 +31,15 @@ Les vidéos sont supprimées tous les matins à 4h.
 <tr><td class=center><video controls width=250> <source src=/download/720p.mp4 /> </video><div></td></tr>
 EOF
 
-for file in `ls -t download/*.lock`
+for file in `ls download/*.lock`
 do
   tmp=$(echo $file | sed s/\.lock//)  
   shortfile=$(echo $tmp | sed s/\.mkv//)  
   sshortfile=$(echo $shortfile | sed s/download\\///)
-  cp /tmp/$sshortfile.mkv download/$sshortfile.mkv
+  mv /tmp/$sshortfile.mkv download/$sshortfile.mkv
   ffmpeg -i $shortfile.mkv -codec copy "$shortfile.mp4" -loglevel error
-  rm $file
 done
+rm -f download/*.lock
 
 for file in `ls -t download/*.mkv`
 do
