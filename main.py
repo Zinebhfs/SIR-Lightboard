@@ -201,7 +201,7 @@ class SCPUploader:
             self.logger.error("SCP connection not established")
             return
         try:
-            self.scp.put(local_path, remote_path)
+            self.scp.put(local_path, remote_path, preserve_times=True)
             self.logger.info(f"Uploaded {local_path} to {remote_path}")
         except Exception as e:
             self.logger.error(f"Failed to upload file: {e}")
@@ -393,14 +393,13 @@ class RecordingApp:
             file_name = os.path.basename(video_file).replace(" ", "_")
             # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             # video_file, f"/opt/SIR-Lightboard/download/{file_name}"
-            time.sleep(1) # Wait for obs to save all the video to the file
-            self.scp_uploader.upload_file(
-                video_file, f"/tmp/{file_name}"
-            )
+            time.sleep(1)  # Wait for obs to save all the video to the file
+            self.scp_uploader.upload_file(video_file, f"/tmp/{file_name}")
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             file_name_without_extension = os.path.splitext(file_name)[0]
             self.scp_uploader.upload_file(
-                f"/home/user/SIR-Lightboard/empty.lock", f"/opt/SIR-Lightboard/server/download/{file_name_without_extension}.lock"
+                f"/home/user/SIR-Lightboard/empty.lock",
+                f"/opt/SIR-Lightboard/server/download/{file_name_without_extension}.lock",
             )
             video_url = f"http://wired.citi.insa-lyon.fr/download/{file_name_without_extension}.mp4"
             self.logger.info(f"Video URL: {video_url}")
