@@ -393,6 +393,7 @@ class RecordingApp:
             file_name = os.path.basename(video_file).replace(" ", "_")
             # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             # video_file, f"/opt/SIR-Lightboard/download/{file_name}"
+            time.sleep(1) # Wait for obs to save all the video to the file
             self.scp_uploader.upload_file(
                 video_file, f"/tmp/{file_name}"
             )
