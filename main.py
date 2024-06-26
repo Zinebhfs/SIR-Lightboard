@@ -462,8 +462,6 @@ class RecordingApp:
                     self.logger.info(
                         "Screenshot in progress, pls wait before taking another action"
                     )
-                else:
-                    self.logger.info(f"Unexpected action ⏯️ with state {self.state}")
 
             # Action : 🟥
             elif event.name == "é" or event.name == "2":
@@ -493,9 +491,6 @@ class RecordingApp:
                         "Screenshot in progress, pls wait before taking another action"
                     )
 
-                else:
-                    self.logger.info(f"Unexpected action 🟥 with state {self.state}")
-
             # Action : 📷
             elif event.name == "&" or event.name == "1":
                 current_time = time.time()
@@ -520,10 +515,6 @@ class RecordingApp:
                     self.logger.info(
                         "Screenshot cooldown active, please wait before taking another one"
                     )
-            else:
-                self.logger.info(
-                    f"Unexpected action {event.name} with state {self.state}"
-                )
 
     def capture_screenshot(self, message: str = "", show_gui: bool = True) -> None:
         if show_gui:
