@@ -202,7 +202,7 @@ class SCPUploader:
             return
         try:
             # self.scp.put(local_path, remote_path, preserve_times=True)
-            self.scp.putfo(open(local_path, "rb"), remote_path, mode=0o644)
+            self.scp.putfo(open(local_path, "rb"), remote_path, mode="0644")
             self.logger.info(f"Uploaded {local_path} to {remote_path}")
         except Exception as e:
             self.logger.error(f"Failed to upload file: {e}")
