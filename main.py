@@ -402,13 +402,13 @@ class RecordingApp:
             # video_file, f"/opt/SIR-Lightboard/download/{file_name}"
             time.sleep(1)  # Wait for obs to save all the video to the file
             # SFR : not using scp_uploader for file rights issues
-            #self.scp_uploader.upload_file(video_file, f"/tmp/{file_name}")
-            scp_call=['./copyWired.sh',
-                video_file,
-                "lightboard@wired.citi.insa-lyon.fr:/tmp/{file_name}"
-            ]
-            p = subprocess.Popen(scp_call)
-            p.wait()
+            self.scp_uploader.upload_file(video_file, f"/tmp/{file_name}")
+            #scp_call=['./copyWired.sh',
+            #    video_file,
+            #    "lightboard@wired.citi.insa-lyon.fr:/tmp/{file_name}"
+            #]
+            #p = subprocess.Popen(scp_call)
+            #p.wait()
 
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             file_name_without_extension = os.path.splitext(file_name)[0]
