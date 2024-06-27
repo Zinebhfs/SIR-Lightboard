@@ -205,10 +205,10 @@ class SCPUploader:
             self.logger.info(f"Uploaded {local_path} to {remote_path}")
 
             # Explicitly set the file permissions
-            #chmod_cmd = f"chmod 0666 {remote_path}"
-            #stdin, stdout, stderr = self.ssh.exec_command(chmod_cmd)
-            #stdout.channel.recv_exit_status()  # Wait for the command to complete
-            #self.logger.info(f"Permissions for {remote_path} set to 0666")
+            chmod_cmd = f"chmod 0666 {remote_path}"
+            stdin, stdout, stderr = self.ssh.exec_command(chmod_cmd)
+            stdout.channel.recv_exit_status()  # Wait for the command to complete
+            self.logger.info(f"Permissions for {remote_path} set to 0666")
 
         except Exception as e:
             self.logger.error(f"Failed to upload file: {e}")
