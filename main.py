@@ -205,10 +205,10 @@ class SCPUploader:
             self.logger.info(f"Uploaded {local_path} to {remote_path}")
 
             # Explicitly set the file permissions
-            chmod_cmd = f"chmod 0666 {remote_path}"
-            stdin, stdout, stderr = self.ssh.exec_command(chmod_cmd)
-            stdout.channel.recv_exit_status()  # Wait for the command to complete
-            self.logger.info(f"Permissions for {remote_path} set to 0666")
+            #chmod_cmd = f"chmod 0666 {remote_path}"
+            #stdin, stdout, stderr = self.ssh.exec_command(chmod_cmd)
+            #stdout.channel.recv_exit_status()  # Wait for the command to complete
+            #self.logger.info(f"Permissions for {remote_path} set to 0666")
 
         except Exception as e:
             self.logger.error(f"Failed to upload file: {e}")
@@ -401,7 +401,15 @@ class RecordingApp:
             # self.ftp_uploader.upload_file(video_file, f"/TC/{file_name}")
             # video_file, f"/opt/SIR-Lightboard/download/{file_name}"
             time.sleep(1)  # Wait for obs to save all the video to the file
-            self.scp_uploader.upload_file(video_file, f"/tmp/{file_name}")
+            # SFR : not using scp_uploader for file rights issues
+            #self.scp_uploader.upload_file(video_file, f"/tmp/{file_name}")
+            scp_call=['./copyWired.sh',
+                video_file,
+                "lightboard@wired.citi.insa-lyon.fr:/tmp/{file_name}"
+            ]
+            p = subprocess.Popen(scp_call)
+            p.wait()
+
             # video_url = f"ftp://{self.ftp_uploader.server}/TC/{file_name}"
             file_name_without_extension = os.path.splitext(file_name)[0]
             self.scp_uploader.upload_file(

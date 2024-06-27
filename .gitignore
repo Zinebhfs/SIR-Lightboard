@@ -3,3 +3,4 @@ __pycache__
 id_rsa.dat
 id_rsa.pub
 live-cd/live/
+creds
