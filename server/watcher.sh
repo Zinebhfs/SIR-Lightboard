@@ -27,12 +27,15 @@ Par exemple : https://videos.insa-lyon.fr
 Les vidéos sont supprimées tous les matins à 4h.
 <br>
 
+Une présentation du fonctionnement de l'équipement.
+
 <table>
 <tr><td class=center><video controls width=250> <source src=/download/720p.mp4 /> </video><div></td></tr>
 EOF
 
 for file in `ls download/*.lock`
 do
+  echo "traitement $file"
   tmp=$(echo $file | sed s/\.lock//)  
   shortfile=$(echo $tmp | sed s/\.mkv//)  
   sshortfile=$(echo $shortfile | sed s/download\\///)
