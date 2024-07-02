@@ -24,7 +24,7 @@ do
   duration=$(ffprobe -sexagesimal -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $shortfile.mp4 | cut -f 1 -d '.')
   #fdate=$((date -r $shortfile.mp4 +"%d/%m/%y"))
   fdate=`date -r $shortfile.mp4 +"%d/%m/%y"`
-  echo "$shortfile --> $sizeH --> $duration --> $fdate"
+  #echo "$shortfile --> $sizeH --> $duration --> $fdate"
 
   echo "<div class="video-item">" >> index.html
   echo "  <a href="$shortfile.mkv" download>" >> index.html

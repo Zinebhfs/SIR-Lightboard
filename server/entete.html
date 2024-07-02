@@ -52,7 +52,7 @@
         cursor: pointer;
     }
     .video-preview::after {
-        content: "⬇ Télécharger";
+        content: "⬇Télécharger";
         position: absolute;
         top: 15%;
         left: 50%;
@@ -125,27 +125,20 @@
             <ul>
                 <li><strong>Réservation possible :</strong> https://tc-net.insa-lyon.fr/calendar/calendar.cgi
                 <li><strong>Récupération directe :</strong> Vous pouvez récupérez votre vidéo pour la traiter ou la transférer où vous le souhaitez
-                <li><strong>Suppression des vidéos :</strong> Les vidéos sont supprimées après un délai max d'un jour </li>
-                <li><strong>Tutorial :</strong> La première vidéo de la liste est un tutorial.</li>
+                <li><strong>Suppression des vidéos :</strong> Vous pouvez récupérer vos vidéos pendant au moins 1 jour </li>
+                <li><div style=" display: flex;"><strong>Tutorial :</strong> Cette première vidéo est un tutorial
+                    <a href="/download/720p.mp4" download style="display: inline-block;margin-left: 10px;">
+                      <div class="video-preview">
+                        <video controls width="220px"><source src="/download/720p.mp4" /></video>
+                        <div class="video-details" style="width: 200px;">
+                          <span>0:04:30</span>
+                          <span>100 MB</span>
+                        </div>
+                      </div>
+                    </a></div>
+                </li>
             </ul>
         </div>
 
         <h2>Catalogue des Vidéos LightBoards - Cliquez sur l'image pour télécharger</h2>
         <div class="video-list">
-
-            <div class="video-item">
-                <a href="/download/720p.mp4" download>
-                  <div class="video-preview">
-                    <video controls width="220px"><source src="/download/720p.mp4" /></video>
-                    <div class="video-details">
-                      <span>0:04:30</span>
-                      <span>100 MB</span>
-                    </div>
-                  </div>
-                </a>
-                <div class="video-info">
-                    <div class="video-meta">
-                      Date: 25/06/24
-                    </div>
-                </div>
-            </div>
