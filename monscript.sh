@@ -5,7 +5,8 @@ set -ex
 
 # Mount external disk
 sudo mkdir -p /mnt/nvme0n1
-sudo mount /dev/nvme0n1 /mnt/nvme0n1
+#sudo mount /dev/nvme0n1 /mnt/nvme0n1
+sudo mount /dev/nvme0n1p1 /mnt/nvme0n1
 sudo chown -R user /mnt/nvme0n1
 
 # Deleting videos older than 7 days
