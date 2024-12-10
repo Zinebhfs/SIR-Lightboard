@@ -12,7 +12,8 @@ do
   sshortfile=$(echo $shortfile | sed s/download\\///)
   cp /tmp/$sshortfile.mkv download/$sshortfile.mkv
   rm -f $shortfile.mp4
-  ffmpeg -i $shortfile.mkv -codec copy "$shortfile.mp4" -loglevel error
+  ffmpeg -i $shortfile.mkv -pix_fmt yuv420p -codec copy "$shortfile.mp4" -loglevel error
+  ffmpeg -i $shortfile.mkv -frames:v 1 "$shortfile.jpg"
 done
 rm -f download/*.lock
 
@@ -30,7 +31,7 @@ do
   echo "<div class="video-item">" >> index.html
   echo "  <a href="$shortfile.mkv" download>" >> index.html
   echo "    <div class="video-preview">" >> index.html
-  echo "      <video controls width="220px"><source src="/$shortfile.mp4" /></video>" >> index.html
+  echo "      <video controls preload="none" poster="/$shortfile.jpg" width="220px"><source src="/$shortfile.mp4" /></video>" >> index.html
   echo "      <div class="video-details">" >> index.html
   echo "        <span>$duration</span>" >> index.html
   echo "        <span>$sizeH</span>" >> index.html
