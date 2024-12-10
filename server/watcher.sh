@@ -11,6 +11,7 @@ do
   shortfile=$(echo $tmp | sed s/\.mkv//)  
   sshortfile=$(echo $shortfile | sed s/download\\///)
   cp /tmp/$sshortfile.mkv download/$sshortfile.mkv
+  rm -f $shortfile.mp4
   ffmpeg -i $shortfile.mkv -codec copy "$shortfile.mp4" -loglevel error
 done
 rm -f download/*.lock
