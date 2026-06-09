@@ -1,5 +1,8 @@
 # OBS Recording and INSA POD Upload Automation
 
+## BIOS
+Ajouter le powerOn automatique : BIOS -> Advanced -> APM -> Power on after power loss
+
 ## Introduction
 
 This script is designed to automate the process of recording video using OBS Studio, uploading the recorded video to [POD INSA](https://videos.insa-lyon.fr), and notifying a Discord channel with the uploaded video link. It provides a convenient way to manage recording sessions and streamline the workflow for content creators. We've created a troobleshooting [file](/resources/Troubleshooting.docx) that covers some of the most common cases of failure.
