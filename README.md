@@ -1,7 +1,10 @@
 # OBS Recording and INSA POD Upload Automation
 
-## BIOS
+## BIOS 
+--> Si le Bios est F1
 Ajouter le powerOn automatique : BIOS -> Advanced -> APM -> Power on after power loss
+Date
+boot sur USB non UEFI
 
 ## Introduction
 
